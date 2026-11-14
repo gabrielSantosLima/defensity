@@ -1,0 +1,91 @@
+{
+  "harness": {
+    "version": 2,
+    "commit": "00e34971647785495cbc3c3c0de97552544dd7d8"
+  },
+  "project": {
+    "name": "defensity",
+    "slug": "defensity",
+    "description": "A agent based automation to detect vulnerabilities in any lib/application",
+    "type": "desktop",
+    "license": "MIT",
+    "owner": "gabrielSantosLima",
+    "repo": "gabrielSantosLima/defensity"
+  },
+  "git": {
+    "commitAutonomy": "commit-and-push-when-asked",
+    "defaultBranch": "main"
+  },
+  "quality": {
+    "checks": [
+      "npm ci",
+      "npx tsc --noEmit"
+    ],
+    "ciDepth": "full",
+    "os": [
+      "windows-latest",
+      "ubuntu-latest"
+    ]
+  },
+  "version": {
+    "source": "file",
+    "file": "package.json",
+    "pointer": "version"
+  },
+  "release": {
+    "trigger": "workflow_dispatch",
+    "notesLanguage": "en",
+    "sections": [
+      "features",
+      "fixes",
+      "chores",
+      "other",
+      "known-issues"
+    ],
+    "attachArtifacts": true
+  },
+  "deploy": {
+    "target": "none",
+    "trigger": "manual",
+    "artifact": "dist"
+  },
+  "skills": [
+    "commit-and-push",
+    "release-summary",
+    "release-cut",
+    "add-skill",
+    "readme",
+    "logo",
+    "github-pages"
+  ],
+  "hygiene": {
+    "pullRequestTemplate": true,
+    "codeowners": true,
+    "codeownersOwner": "@gabrielSantosLima"
+  },
+  "ignore": [
+    "PLAN.md",
+    "NOTES.md",
+    ".env",
+    "dist/",
+    "dist-beta/",
+    "dist-renderer/",
+    "node_modules/",
+    "client_secrets.json",
+    "token.json",
+    "*.log"
+  ],
+  "build": {
+    "command": "npm ci && npm run build:renderer && npx electron-builder --publish never",
+    "artifacts": [
+      "dist/*.exe",
+      "dist/*.AppImage",
+      "dist/*.deb",
+      "dist/*.zip",
+      "dist/*.tar.gz",
+      "dist/*.blockmap",
+      "dist/latest*.yml"
+    ],
+    "attachToRelease": true
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "defensity",
+  "version": "0.0.0",
+  "description": "A agent based automation to detect vulnerabilities in any lib/application",
+  "private": true,
+  "license": "MIT"
+}

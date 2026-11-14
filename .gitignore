@@ -1,0 +1,12 @@
+
+# Local-only files (harness)
+PLAN.md
+NOTES.md
+.env
+dist/
+dist-beta/
+dist-renderer/
+node_modules/
+client_secrets.json
+token.json
+*.log
