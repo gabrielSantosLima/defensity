@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>defensity — Design system A · Console</title>
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+    --r-sm: 4px;
+    --r-md: 6px;
+    --r-lg: 8px;
+    --r-pill: 999px;
+    --s1: 4px;
+    --s2: 8px;
+    --s3: 12px;
+    --s4: 16px;
+    --s5: 24px;
+    --s6: 32px;
+    --s7: 48px;
+    --s8: 64px;
+    --dur: 140ms;
+  }
+  [data-theme="light"] {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --surface-3: #e4e9ee;
+    --border: #dfe4e9;
+    --border-strong: #c6ced6;
+    --text: #101828;
+    --text-muted: #5a6572;
+    --text-faint: #8a94a1;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-soft: #e7eefd;
+    --on-accent: #ffffff;
+    --critical: #b42318;
+    --critical-soft: #feeceb;
+    --high: #b54708;
+    --high-soft: #fef0e6;
+    --medium: #8a6a00;
+    --medium-soft: #fbf3da;
+    --low: #3a6b8a;
+    --low-soft: #e8f1f7;
+    --ok: #067647;
+    --ok-soft: #e7f6ee;
+    --shadow-1: 0 1px 2px rgba(16, 24, 40, .06);
+    --shadow-2: 0 12px 32px rgba(16, 24, 40, .12);
+  }
+  [data-theme="dark"] {
+    --bg: #0c1117;
+    --surface: #131a22;
+    --surface-2: #18212b;
+    --surface-3: #1f2933;
+    --border: #243040;
+    --border-strong: #334255;
+    --text: #e9eef4;
+    --text-muted: #9aa7b5;
+    --text-faint: #6b7887;
+    --accent: #4d8dff;
+    --accent-hover: #6ba1ff;
+    --accent-soft: #17284a;
+    --on-accent: #06122a;
+    --critical: #ff8a80;
+    --critical-soft: #3a1a1a;
+    --high: #ffb27a;
+    --high-soft: #3a2417;
+    --medium: #ffd66b;
+    --medium-soft: #362c14;
+    --low: #8fc4e8;
+    --low-soft: #162a3a;
+    --ok: #6ee7a8;
+    --ok-soft: #12301f;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-2: 0 16px 40px rgba(0, 0, 0, .55);
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.55 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p, ul { margin: 0; }
+  a { color: inherit; }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+  code, kbd, .mono { font-family: var(--font-mono); }
+
+  .only-dark { display: none; }
+  [data-theme="dark"] .only-light { display: none; }
+  [data-theme="dark"] .only-dark { display: block; }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 28px 72px; }
+
+  /* ---------- doc toolbar ---------- */
+  .docbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    padding: 12px 28px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .docbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    width: 100%;
+    max-width: 1124px;
+    margin: 0 auto;
+  }
+  .docbrand { display: flex; align-items: center; gap: 10px; }
+  .docbrand img { height: 18px; width: auto; }
+  .docbrand span {
+    padding-left: 10px;
+    border-left: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    font: 600 11px/1 var(--font-mono);
+    letter-spacing: .04em;
+  }
+  .theme-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text-muted);
+    font: 500 12px var(--font-sans);
+    cursor: pointer;
+  }
+  .theme-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+  /* ---------- page head ---------- */
+  .page-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s6);
+    align-items: end;
+    padding: 56px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    margin-bottom: 10px;
+    color: var(--text-faint);
+    font: 600 11px/1 var(--font-mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .page-head h1 {
+    font-size: clamp(32px, 4vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -.03em;
+    font-weight: 700;
+  }
+  .lede { max-width: 62ch; margin-top: 14px; color: var(--text-muted); font-size: 15px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+  .fact {
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--text-muted);
+    font: 500 11px/1.7 var(--font-mono);
+  }
+  .verdict {
+    max-width: 260px;
+    padding: var(--s4);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .verdict strong { display: block; margin-bottom: 6px; color: var(--text); font-size: 12px; }
+
+  /* ---------- sections ---------- */
+  section { padding: 44px 0 0; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s4);
+    margin-bottom: 18px;
+  }
+  .sec-head h2 {
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -.01em;
+  }
+  .sec-head p { color: var(--text-faint); font: 500 11px var(--font-mono); }
+
+  /* ---------- swatches ---------- */
+  .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .sw {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+  .sw-color { height: 64px; border-bottom: 1px solid var(--border); }
+  .sw-body { padding: 9px 10px 10px; }
+  .sw-name { font-size: 12px; font-weight: 600; }
+  .sw-hex { color: var(--text-faint); font: 500 11px var(--font-mono); text-transform: uppercase; }
+  .sw-role { margin-top: 4px; color: var(--text-muted); font-size: 11px; }
+
+  /* ---------- type specimens ---------- */
+  .type-grid { display: grid; gap: 0; border-top: 1px solid var(--border); }
+  .type-row {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: var(--s4);
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .type-meta { color: var(--text-faint); font: 500 11px/1.7 var(--font-mono); }
+  .type-meta b { display: block; color: var(--text-muted); font-weight: 600; }
+  .t-display { font-size: 38px; font-weight: 700; letter-spacing: -.035em; line-height: 1.05; }
+  .t-h1 { font-size: 26px; font-weight: 650; letter-spacing: -.025em; }
+  .t-h2 { font-size: 19px; font-weight: 650; letter-spacing: -.015em; }
+  .t-body { font-size: 14px; }
+  .t-small { font-size: 12px; color: var(--text-muted); }
+  .t-label {
+    font: 600 10px/1 var(--font-mono);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .t-mono { font: 500 13px var(--font-mono); }
+
+  /* ---------- scale / shape ---------- */
+  .scale-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .space-item { display: grid; gap: 6px; justify-items: start; }
+  .space-bar { height: 10px; border-radius: 2px; background: var(--accent); opacity: .85; }
+  .space-item span { color: var(--text-faint); font: 500 10px var(--font-mono); }
+  .shape-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .shape {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    min-height: 96px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font: 500 11px var(--font-mono);
+  }
+  .shape i {
+    display: block;
+    width: 56px;
+    height: 40px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+  }
+  .shape.r-sm i { border-radius: var(--r-sm); }
+  .shape.r-md i { border-radius: var(--r-md); }
+  .shape.r-lg i { border-radius: var(--r-lg); }
+  .shape.r-pill i { border-radius: var(--r-pill); }
+  .panel-note {
+    padding: 11px 13px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* ---------- components ---------- */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    font: 600 11px/1 var(--font-mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .card-body { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; align-items: center; }
+  .card-body.stack { display: grid; gap: 12px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font: 500 13px/1 var(--font-sans);
+    cursor: pointer;
+    transition: background var(--dur), border-color var(--dur), color var(--dur);
+    white-space: nowrap;
+  }
+  .btn--primary { background: var(--accent); color: var(--on-accent); }
+  .btn--primary:hover { background: var(--accent-hover); }
+  .btn--secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+  .btn--secondary:hover { background: var(--surface-2); }
+  .btn--ghost { background: transparent; color: var(--text-muted); }
+  .btn--ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn--danger { background: transparent; border-color: color-mix(in srgb, var(--critical) 40%, transparent); color: var(--critical); }
+  .btn--danger:hover { background: var(--critical-soft); }
+  .btn--sm { height: 26px; padding: 0 9px; font-size: 12px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+  .field { display: grid; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 550; color: var(--text-muted); }
+  .input {
+    height: 34px;
+    width: 100%;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: 400 13px var(--font-sans);
+  }
+  .input::placeholder { color: var(--text-faint); }
+  .input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  .input.mono { font-family: var(--font-mono); font-size: 12px; }
+  .hint { color: var(--text-faint); font-size: 11px; }
+
+  .seg { display: inline-flex; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); gap: 2px; }
+  .seg button {
+    height: 26px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: 500 12px var(--font-sans);
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+
+  .check { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+  .box {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+  .box.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .box svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+  .switch { width: 34px; height: 20px; border-radius: var(--r-pill); background: var(--accent); position: relative; }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px 0 7px;
+    border-radius: var(--r-sm);
+    font: 600 10px/1 var(--font-mono);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .sev::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .sev--critical { color: var(--critical); background: var(--critical-soft); }
+  .sev--high { color: var(--high); background: var(--high-soft); }
+  .sev--medium { color: var(--medium); background: var(--medium-soft); }
+  .sev--low { color: var(--low); background: var(--low-soft); }
+  .sev--ok { color: var(--ok); background: var(--ok-soft); }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    color: var(--text-muted);
+    font: 500 10px var(--font-mono);
+  }
+
+  .progress { height: 6px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+  .progress > i { display: block; height: 100%; width: 62%; border-radius: inherit; background: var(--accent); }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); }
+  .tabs button {
+    position: relative;
+    height: 34px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font: 500 13px var(--font-sans);
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { color: var(--text); }
+  .tabs button[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--ok);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+    font-size: 12px;
+  }
+  .toast strong { font-weight: 600; }
+
+  /* ---------- table ---------- */
+  .table-wrap { overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font: 600 10px/1.4 var(--font-mono);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+  }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--surface-2); }
+  td .pkg { font: 500 12px var(--font-mono); }
+  td .path { color: var(--text-faint); font: 500 11px var(--font-mono); }
+  .num { font: 500 12px var(--font-mono); color: var(--text-muted); }
+
+  /* ---------- app mock ---------- */
+  .window {
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+    background: var(--bg);
+    box-shadow: var(--shadow-2);
+  }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 38px;
+    padding: 0 0 0 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .titlebar .tb-left { display: flex; align-items: center; gap: 9px; }
+  .titlebar img { height: 13px; width: auto; }
+  .titlebar .tb-name { font: 600 12px var(--font-mono); letter-spacing: .02em; }
+  .tb-controls { display: flex; height: 100%; }
+  .tb-controls span {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    color: var(--text-muted);
+    font: 500 11px var(--font-mono);
+  }
+  .tb-controls span:hover { background: var(--surface-3); }
+  .tb-controls span.close:hover { background: var(--critical); color: #fff; }
+
+  .app { display: grid; grid-template-columns: 208px minmax(0, 1fr); min-height: 560px; }
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 14px 10px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .proj {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+  }
+  .proj .dot { width: 22px; height: 22px; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); font: 700 11px var(--font-mono); }
+  .proj b { display: block; font-size: 12px; font-weight: 600; }
+  .proj small { display: block; color: var(--text-faint); font: 500 10px var(--font-mono); }
+  .nav { display: grid; gap: 2px; }
+  .nav-label { padding: 0 8px 6px; color: var(--text-faint); font: 600 9px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .nav a:hover { background: var(--surface-2); color: var(--text); }
+  .nav a.on { background: var(--accent-soft); color: var(--accent); font-weight: 550; }
+  .nav a .count { margin-left: auto; color: var(--text-faint); font: 500 10px var(--font-mono); }
+  .nav a.on .count { color: inherit; }
+  .ico { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .appbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .appbar h3 { font-size: 14px; font-weight: 650; }
+  .appbar .spacer { flex: 1; }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 210px;
+    height: 28px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--surface-3); color: var(--text-muted); display: grid; place-items: center; font: 600 10px var(--font-mono); }
+  .content { display: grid; gap: 14px; padding: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .kpi { padding: 12px 13px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  .kpi .k-label { color: var(--text-faint); font: 600 9px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+  .kpi .k-val { margin-top: 7px; font: 650 24px/1 var(--font-sans); letter-spacing: -.02em; }
+  .kpi .k-delta { margin-top: 5px; font: 500 10px var(--font-mono); color: var(--text-faint); }
+  .kpi .k-delta.down { color: var(--ok); }
+  .kpi .k-delta.up { color: var(--critical); }
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid var(--border); }
+  .panel-h b { font-size: 12px; font-weight: 650; }
+  .panel-h .mono { color: var(--text-faint); font-size: 10px; }
+  .panel table { font-size: 12px; }
+  .panel thead th { padding: 7px 13px; }
+  .panel tbody td { padding: 9px 13px; }
+  .risk-bar { display: flex; align-items: center; gap: 7px; }
+  .risk-bar i { display: block; height: 5px; border-radius: var(--r-pill); background: currentColor; opacity: .85; }
+
+  .overlay {
+    display: grid;
+    place-items: center;
+    min-height: 200px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background:
+      linear-gradient(var(--surface-2), var(--surface-2)),
+      repeating-linear-gradient(45deg, transparent 0 6px, var(--surface-3) 6px 7px);
+    background-blend-mode: normal;
+  }
+  .modal {
+    width: min(380px, 100%);
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-2);
+  }
+  .modal h4 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
+  .modal p { color: var(--text-muted); font-size: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  /* ---------- footer ---------- */
+  .doc-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s4);
+    margin-top: 56px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font: 500 11px var(--font-mono);
+  }
+  @media (max-width: 860px) {
+    .page-head { grid-template-columns: 1fr; align-items: start; }
+    .verdict { max-width: none; }
+    .app { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .doc-foot { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="docbar">
+  <div class="docbar-inner">
+    <div class="docbrand">
+      <img class="only-light" src="../assets/logo/logo.svg" alt="defensity">
+      <img class="only-dark" src="../assets/logo/logo-dark.svg" alt="defensity">
+      <span>DS / A</span>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>
+      <span id="themeLabel">Tema claro</span>
+    </button>
+  </div>
+</div>
+
+<div class="shell">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Design system · opção A</p>
+      <h1>Console</h1>
+      <p class="lede">Uma interface de instrumento: cinzas frios, um único azul de sinal e densidade alta. Feita para ser lida em tabelas longas, com hierarquia construída por contraste de superfície, não por cor.</p>
+      <div class="facts">
+        <span class="fact">radius 4–8 px</span>
+        <span class="fact">densidade alta</span>
+        <span class="fact">sans + mono</span>
+        <span class="fact">azul #2563EB</span>
+        <span class="fact">claro/escuro</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <strong>Quando escolher</strong>
+      Se o produto deve parecer uma ferramenta de trabalho séria, próxima de um IDE ou de um console de observabilidade. Escala bem para muitos dados na tela.
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>Cores</h2>
+      <p>superfícies · texto · sinal · severidade</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-color" style="background:var(--bg)"></div><div class="sw-body"><div class="sw-name">Canvas</div><div class="sw-hex">--bg</div><div class="sw-role">Fundo da aplicação</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--surface)"></div><div class="sw-body"><div class="sw-name">Surface</div><div class="sw-hex">--surface</div><div class="sw-role">Painéis e cartões</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--surface-2)"></div><div class="sw-body"><div class="sw-name">Surface 2</div><div class="sw-hex">--surface-2</div><div class="sw-role">Cabeçalhos e hover</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--surface-3)"></div><div class="sw-body"><div class="sw-name">Surface 3</div><div class="sw-hex">--surface-3</div><div class="sw-role">Trilhos e divisores</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--border-strong)"></div><div class="sw-body"><div class="sw-name">Border strong</div><div class="sw-hex">--border-strong</div><div class="sw-role">Controles ativos</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--text)"></div><div class="sw-body"><div class="sw-name">Text</div><div class="sw-hex">--text</div><div class="sw-role">Texto primário</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--text-muted)"></div><div class="sw-body"><div class="sw-name">Text muted</div><div class="sw-hex">--text-muted</div><div class="sw-role">Texto secundário</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--accent)"></div><div class="sw-body"><div class="sw-name">Signal</div><div class="sw-hex">--accent</div><div class="sw-role">Ação e seleção</div></div></div>
+    </div>
+    <div class="swatches" style="margin-top:10px">
+      <div class="sw"><div class="sw-color" style="background:var(--critical)"></div><div class="sw-body"><div class="sw-name">Critical</div><div class="sw-hex">--critical</div><div class="sw-role">Explorável agora</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--high)"></div><div class="sw-body"><div class="sw-name">High</div><div class="sw-hex">--high</div><div class="sw-role">Impacto alto</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--medium)"></div><div class="sw-body"><div class="sw-name">Medium</div><div class="sw-hex">--medium</div><div class="sw-role">Requer contexto</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--low)"></div><div class="sw-body"><div class="sw-name">Low</div><div class="sw-hex">--low</div><div class="sw-role">Informativo</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--ok)"></div><div class="sw-body"><div class="sw-name">Resolved</div><div class="sw-hex">--ok</div><div class="sw-role">Corrigido e verificado</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--accent-soft)"></div><div class="sw-body"><div class="sw-name">Signal soft</div><div class="sw-hex">--accent-soft</div><div class="sw-role">Item de navegação ativo</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--critical-soft)"></div><div class="sw-body"><div class="sw-name">Critical soft</div><div class="sw-hex">--critical-soft</div><div class="sw-role">Fundo de etiqueta</div></div></div>
+      <div class="sw"><div class="sw-color" style="background:var(--surface-2)"></div><div class="sw-body"><div class="sw-name">Focus ring</div><div class="sw-hex">--accent</div><div class="sw-role">2 px, offset 2</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Tipografia</h2>
+      <p>system sans · mono para dados</p>
+    </div>
+    <div class="type-grid">
+      <div class="type-row">
+        <div class="type-meta"><b>Display</b>38 / 40 · 700<br>-.035em</div>
+        <div class="t-display">Superfície de ataque</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Heading 1</b>26 / 30 · 650<br>-.025em</div>
+        <div class="t-h1">Achados do último scan</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Heading 2</b>19 / 26 · 650<br>-.015em</div>
+        <div class="t-h2">Cadeia de dependências</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Body</b>14 / 21 · 400</div>
+        <div class="t-body">O agente correlaciona manifesto, lockfile e código para confirmar se um achado é realmente alcançável no runtime.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Small</b>12 / 18 · 400</div>
+        <div class="t-small">Última verificação há 4 minutos · 1.284 dependências analisadas</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Label</b>10 / 10 · 600<br>.12em uppercase</div>
+        <div class="t-label">Severidade · alcance · confiança</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Mono</b>13 / 20 · 500</div>
+        <div class="t-mono">lodash.merge@4.17.21 → CVE-2020-8203</div>
+      </div>
+    </div>
+    <p class="panel-note" style="margin-top:14px">Regra: números, versões, caminhos e identificadores sempre em mono. Nunca usar mono em parágrafos longos.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Espaçamento e forma</h2>
+      <p>base 4 · raio pequeno</p>
+    </div>
+    <div class="scale-row" style="margin-bottom:18px">
+      <div class="space-item"><i class="space-bar" style="width:4px"></i><span>4</span></div>
+      <div class="space-item"><i class="space-bar" style="width:8px"></i><span>8</span></div>
+      <div class="space-item"><i class="space-bar" style="width:12px"></i><span>12</span></div>
+      <div class="space-item"><i class="space-bar" style="width:16px"></i><span>16</span></div>
+      <div class="space-item"><i class="space-bar" style="width:24px"></i><span>24</span></div>
+      <div class="space-item"><i class="space-bar" style="width:32px"></i><span>32</span></div>
+      <div class="space-item"><i class="space-bar" style="width:48px"></i><span>48</span></div>
+      <div class="space-item"><i class="space-bar" style="width:64px"></i><span>64</span></div>
+    </div>
+    <div class="shape-grid">
+      <div class="shape r-sm"><i></i>4 px · chip, tag</div>
+      <div class="shape r-md"><i></i>6 px · botão, input</div>
+      <div class="shape r-lg"><i></i>8 px · painel, janela</div>
+      <div class="shape r-pill"><i></i>999 px · progresso</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Componentes</h2>
+      <p>estados base</p>
+    </div>
+    <div class="comp-grid">
+
+      <div class="card">
+        <div class="card-head">Botões</div>
+        <div class="card-body">
+          <button class="btn btn--primary">Iniciar scan</button>
+          <button class="btn btn--secondary">Exportar</button>
+          <button class="btn btn--ghost">Cancelar</button>
+          <button class="btn btn--danger">Ignorar</button>
+          <button class="btn btn--primary" disabled>Bloqueado</button>
+        </div>
+        <div class="card-body" style="border-top:1px solid var(--border)">
+          <button class="btn btn--primary btn--sm">Pequeno</button>
+          <button class="btn btn--secondary btn--sm">Pequeno</button>
+          <button class="btn btn--ghost btn--sm">Texto</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Campos</div>
+        <div class="card-body stack">
+          <div class="field">
+            <label for="repo">Repositório</label>
+            <input class="input mono" id="repo" value="github.com/acme/payments-api">
+          </div>
+          <div class="field">
+            <label for="q">Filtrar achados</label>
+            <input class="input" id="q" placeholder="severidade:crítica pacote:lodash">
+            <span class="hint">Sintaxe aceita: campo:valor, aspas e parênteses.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Seleção</div>
+        <div class="card-body stack">
+          <div class="seg" role="group" aria-label="Modo de análise">
+            <button aria-pressed="true">Rápido</button>
+            <button aria-pressed="false">Profundo</button>
+            <button aria-pressed="false">Contínuo</button>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <span class="check"><span class="box on"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span> Só alcançáveis</span>
+            <span class="check"><span class="box"></span> Incluir dev</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="switch"></span>
+            <span style="font-size:13px">Notificar ao terminar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Severidade</div>
+        <div class="card-body">
+          <span class="sev sev--critical">crítica</span>
+          <span class="sev sev--high">alta</span>
+          <span class="sev sev--medium">média</span>
+          <span class="sev sev--low">baixa</span>
+          <span class="sev sev--ok">resolvida</span>
+        </div>
+        <div class="card-body" style="border-top:1px solid var(--border)">
+          <span class="pill">sem patch</span>
+          <span class="pill">transitiva</span>
+          <span class="pill">runtime</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Progresso</div>
+        <div class="card-body stack">
+          <div style="display:flex;justify-content:space-between;font-size:12px">
+            <span>Analisando dependências</span>
+            <span class="mono" style="color:var(--text-faint)">812 / 1.284</span>
+          </div>
+          <div class="progress"><i></i></div>
+          <div class="toast">
+            <span class="sev sev--ok" style="height:18px">ok</span>
+            <span><strong>Scan concluído.</strong> 3 achados confirmados.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Abas</div>
+        <div class="card-body stack" style="padding:0">
+          <div class="tabs">
+            <button aria-selected="true">Achados</button>
+            <button aria-selected="false">Pacotes</button>
+            <button aria-selected="false">Histórico</button>
+          </div>
+          <p style="padding:12px 14px;font-size:12px;color:var(--text-muted)">A aba ativa ganha uma barra de 2 px, nunca uma pílula colorida.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Tabela de achados</h2>
+      <p>o componente mais importante do produto</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:96px">Severidade</th>
+            <th>Pacote</th>
+            <th>Caminho</th>
+            <th style="width:110px">Alcance</th>
+            <th style="width:80px">CVSS</th>
+            <th style="width:80px">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="sev sev--critical">crítica</span></td>
+            <td class="pkg">lodash.merge@4.17.21</td>
+            <td class="path">payments-api → helm-chart → lodash.merge</td>
+            <td><span class="pill">runtime</span></td>
+            <td class="num">9.8</td>
+            <td class="num">aberta</td>
+          </tr>
+          <tr>
+            <td><span class="sev sev--high">alta</span></td>
+            <td class="pkg">axios@1.6.2</td>
+            <td class="path">payments-api → axios</td>
+            <td><span class="pill">runtime</span></td>
+            <td class="num">7.5</td>
+            <td class="num">aberta</td>
+          </tr>
+          <tr>
+            <td><span class="sev sev--medium">média</span></td>
+            <td class="pkg">webpack@5.88.0</td>
+            <td class="path">payments-api → build → webpack</td>
+            <td><span class="pill">build</span></td>
+            <td class="num">5.3</td>
+            <td class="num">triada</td>
+          </tr>
+          <tr>
+            <td><span class="sev sev--low">baixa</span></td>
+            <td class="pkg">js-yaml@4.1.0</td>
+            <td class="path">payments-api → eslint → js-yaml</td>
+            <td><span class="pill">dev</span></td>
+            <td class="num">3.1</td>
+            <td class="num">ignorada</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Tela aplicada</h2>
+      <p>window · 1.100 × 560</p>
+    </div>
+    <div class="window">
+      <div class="titlebar">
+        <div class="tb-left">
+          <img class="only-light" src="../assets/logo/logo.svg" alt="defensity">
+          <img class="only-dark" src="../assets/logo/logo-dark.svg" alt="defensity">
+          <span class="tb-name">payments-api</span>
+        </div>
+        <div class="tb-controls">
+          <span>—</span><span>□</span><span class="close">×</span>
+        </div>
+      </div>
+      <div class="app">
+        <aside class="side">
+          <div class="proj">
+            <span class="dot">P</span>
+            <div><b>payments-api</b><small>main · 4f2a1c</small></div>
+          </div>
+          <nav class="nav">
+            <span class="nav-label">Workspace</span>
+            <a href="#" class="on">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+              Visão geral
+            </a>
+            <a href="#">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+              Achados <span class="count">17</span>
+            </a>
+            <a href="#">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 12l9 4 9-4M3 17l9 4 9-4"/></svg>
+              Pacotes <span class="count">1.284</span>
+            </a>
+            <a href="#">
+              <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+              Scans
+            </a>
+            <span class="nav-label" style="margin-top:10px">Configuração</span>
+            <a href="#">
+              <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Políticas
+            </a>
+          </nav>
+        </aside>
+        <div class="main">
+          <div class="appbar">
+            <h3>Visão geral</h3>
+            <span class="pill">main</span>
+            <div class="spacer"></div>
+            <div class="search">
+              <svg class="ico" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+              Buscar
+            </div>
+            <button class="btn btn--primary btn--sm">Novo scan</button>
+            <span class="avatar">GS</span>
+          </div>
+          <div class="content">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="k-label">Críticas</div>
+                <div class="k-val">3</div>
+                <div class="k-delta up">+1 desde ontem</div>
+              </div>
+              <div class="kpi">
+                <div class="k-label">Abertas</div>
+                <div class="k-val">17</div>
+                <div class="k-delta down">−4 na semana</div>
+              </div>
+              <div class="kpi">
+                <div class="k-label">Pacotes</div>
+                <div class="k-val">1.284</div>
+                <div class="k-delta">312 diretos</div>
+              </div>
+              <div class="kpi">
+                <div class="k-label">Cobertura</div>
+                <div class="k-val">94%</div>
+                <div class="k-delta">lockfile + código</div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-h">
+                <b>Achados prioritários</b>
+                <span class="mono">ordenado por alcance</span>
+              </div>
+              <table>
+                <thead>
+                  <tr><th>Sev.</th><th>Pacote</th><th>Confiança</th><th>Caminho</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="sev sev--critical">crítica</span></td>
+                    <td class="pkg">lodash.merge</td>
+                    <td><div class="risk-bar" style="color:var(--critical)"><i style="width:52px"></i><span class="num">98%</span></div></td>
+                    <td class="path">runtime</td>
+                  </tr>
+                  <tr>
+                    <td><span class="sev sev--high">alta</span></td>
+                    <td class="pkg">axios</td>
+                    <td><div class="risk-bar" style="color:var(--high)"><i style="width:34px"></i><span class="num">81%</span></div></td>
+                    <td class="path">runtime</td>
+                  </tr>
+                  <tr>
+                    <td><span class="sev sev--medium">média</span></td>
+                    <td class="pkg">webpack</td>
+                    <td><div class="risk-bar" style="color:var(--medium)"><i style="width:26px"></i><span class="num">44%</span></div></td>
+                    <td class="path">build</td>
+                  </tr>
+                  <tr>
+                    <td><span class="sev sev--low">baixa</span></td>
+                    <td class="pkg">js-yaml</td>
+                    <td><div class="risk-bar" style="color:var(--low)"><i style="width:14px"></i><span class="num">12%</span></div></td>
+                    <td class="path">dev</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Diálogo</h2>
+      <p>confirmação destrutiva</p>
+    </div>
+    <div class="overlay">
+      <div class="modal">
+        <h4>Ignorar 3 achados?</h4>
+        <p>Eles deixam de aparecer em scans futuros até que a política mude. O histórico permanece auditável.</p>
+        <div class="modal-actions">
+          <button class="btn btn--secondary">Cancelar</button>
+          <button class="btn btn--danger">Ignorar achados</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="doc-foot">
+    <span>DS / A · Console</span>
+    <span>tokens em CSS custom properties · sem dependências</span>
+  </footer>
+</div>
+
+<script>
+  const btn = document.getElementById('themeBtn');
+  const label = document.getElementById('themeLabel');
+  const root = document.documentElement;
+  const sync = () => {
+    const dark = root.getAttribute('data-theme') === 'dark';
+    label.textContent = dark ? 'Tema escuro' : 'Tema claro';
+  };
+  btn.addEventListener('click', () => {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    sync();
+  });
+  sync();
+</script>
+</body>
+</html>

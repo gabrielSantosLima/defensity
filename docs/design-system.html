@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>defensity — escolha do design system</title>
+<style>
+  :root {
+    --bg: #f6f6f4;
+    --surface: #ffffff;
+    --line: #e2e2de;
+    --line-strong: #c9c9c3;
+    --ink: #14161a;
+    --muted: #646a73;
+    --faint: #8d939b;
+    --accent: #0f6b57;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1, h2, h3, p, ul { margin: 0; }
+  .shell { max-width: 1120px; margin: 0 auto; padding: 56px 28px 80px; }
+  header { display: flex; align-items: center; gap: 14px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+  header img { height: 18px; width: auto; }
+  header span { color: var(--faint); font: 500 11px/1 ui-monospace, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+
+  h1 { margin-top: 44px; font-size: clamp(30px, 4vw, 42px); line-height: 1.1; letter-spacing: -.03em; }
+  .lede { max-width: 68ch; margin-top: 16px; color: var(--muted); font-size: 16px; }
+  .hint {
+    display: flex;
+    gap: 10px;
+    max-width: 760px;
+    margin-top: 20px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .options { display: grid; gap: 22px; margin-top: 36px; }
+  .option { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .option-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .option-bar .name { display: flex; align-items: baseline; gap: 10px; }
+  .option-bar b { font-size: 15px; }
+  .option-bar .tag { color: var(--faint); font: 500 10px/1 ui-monospace, Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .option-bar a {
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .option-bar a:hover { text-decoration: underline; }
+  .option iframe { display: block; width: 100%; height: 760px; border: 0; background: #fff; }
+
+  h2 { margin-top: 48px; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .table-wrap { margin-top: 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  thead th { background: #fafaf8; color: var(--muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--muted); white-space: nowrap; }
+  td b { font-weight: 600; }
+
+  .question {
+    margin-top: 44px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .question h3 { font-size: 18px; }
+  .question ul { margin-top: 14px; padding-left: 18px; color: var(--muted); }
+  .question li + li { margin-top: 6px; }
+
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; display: flex; justify-content: space-between; gap: 16px; }
+  @media (max-width: 760px) {
+    .option iframe { height: 620px; }
+    footer { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <img src="../assets/logo/logo.svg" alt="defensity">
+    <span>design system · escolha</span>
+  </header>
+
+  <h1>Três direções para o app desktop.</h1>
+  <p class="lede">Cada página é um design system completo e utilizável: tokens de cor, escala tipográfica, espaçamento, raios, componentes base, tabela de achados e uma tela de aplicação montada. As três usam o mesmo conteúdo para a comparação ser justa.</p>
+  <p class="hint"><b>Atenção:</b> cada página tem um alternador de tema no canto superior direito. Vale olhar as três em claro e em escuro antes de decidir — o tema padrão de cada uma é apenas uma preferência, não uma limitação.</p>
+
+  <div class="options">
+    <div class="option">
+      <div class="option-bar">
+        <div class="name"><b>A — Console</b><span class="tag">instrumento</span></div>
+        <a href="design-system-a.html" target="_blank" rel="noopener">abrir em página inteira</a>
+      </div>
+      <iframe src="design-system-a.html" title="Design system A — Console" loading="lazy"></iframe>
+    </div>
+
+    <div class="option">
+      <div class="option-bar">
+        <div class="name"><b>B — Atelier</b><span class="tag">editorial</span></div>
+        <a href="design-system-b.html" target="_blank" rel="noopener">abrir em página inteira</a>
+      </div>
+      <iframe src="design-system-b.html" title="Design system B — Atelier" loading="lazy"></iframe>
+    </div>
+
+    <div class="option">
+      <div class="option-bar">
+        <div class="name"><b>C — Terminal</b><span class="tag">devsecops</span></div>
+        <a href="design-system-c.html" target="_blank" rel="noopener">abrir em página inteira</a>
+      </div>
+      <iframe src="design-system-c.html" title="Design system C — Terminal" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <h2>Comparação</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Critério</th>
+          <th>A · Console</th>
+          <th>B · Atelier</th>
+          <th>C · Terminal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Personalidade</td>
+          <td><b>Ferramenta séria</b>, próxima de IDE e observabilidade</td>
+          <td><b>Documento calmo</b>, próximo de relatório e publicação</td>
+          <td><b>Pipeline</b>, próximo de CLI e editor</td>
+        </tr>
+        <tr>
+          <td>Densidade</td>
+          <td>Alta — muitos dados por tela</td>
+          <td>Média — respiro e leitura longa</td>
+          <td>Máxima — grade de 1 px</td>
+        </tr>
+        <tr>
+          <td>Tipografia</td>
+          <td>System sans + mono nos dados</td>
+          <td>Serifa nos títulos, sans no corpo, mono nos dados</td>
+          <td>Inter para texto, JetBrains Mono para dados</td>
+        </tr>
+        <tr>
+          <td>Sinal</td>
+          <td>Azul <b>#2563EB</b></td>
+          <td>Verde <b>#0F6B57</b></td>
+          <td>Lima <b>#B6F24A</b></td>
+        </tr>
+        <tr>
+          <td>Forma</td>
+          <td>Raio 4–8 px, borda fina</td>
+          <td>Raio 6–18 px, pílulas</td>
+          <td>Raio 2–4 px, cantos retos</td>
+        </tr>
+        <tr>
+          <td>Tema padrão</td>
+          <td>Claro</td>
+          <td>Claro</td>
+          <td>Escuro</td>
+        </tr>
+        <tr>
+          <td>Ponto forte</td>
+          <td>Escala para volume e triagem rápida</td>
+          <td>Explica o achado; parece cuidado e não alarme</td>
+          <td>Imediatamente reconhecível pelo público técnico</td>
+        </tr>
+        <tr>
+          <td>Risco</td>
+          <td>Pode parecer genérica entre tantos dashboards</td>
+          <td>Serifa em app pode soar “site”, não “ferramenta”</td>
+          <td>Cansa e vira ruído com uso prolongado</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="question">
+    <h3>Como decidir</h3>
+    <ul>
+      <li>Se a tela principal é <b>triagem em tabela</b>, a opção A vence.</li>
+      <li>Se a tela principal é o <b>relatório explicado</b>, a opção B vence.</li>
+      <li>Se a tela principal é o <b>monitoramento contínuo</b> feito por engenheiros, a opção C vence.</li>
+      <li>Também é possível escolher a base e importar um elemento de outra: por exemplo C com a tabela de A, ou A com a serifa de B só nos títulos de relatório.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <span>docs/design-system-a.html · design-system-b.html · design-system-c.html</span>
+    <span>Nenhum token foi aplicado ao código do app ainda.</span>
+  </footer>
+</div>
+</body>
+</html>

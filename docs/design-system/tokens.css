@@ -1,0 +1,162 @@
+/* defensity design system — reference tokens
+ * Direction C (Terminal). Keep this file in sync with tokens.md.
+ * This is documentation, not build output. Copy into the renderer when the
+ * app is scaffolded; do not import it from docs at runtime.
+ */
+
+:root {
+  /* Typography ------------------------------------------------------------ */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --text-display-size: 38px;
+  --text-display-line: 40px;
+  --text-display-weight: 700;
+  --text-display-tracking: -0.025em;
+
+  --text-h1-size: 24px;
+  --text-h1-line: 30px;
+  --text-h1-weight: 650;
+  --text-h1-tracking: -0.02em;
+
+  --text-h2-size: 18px;
+  --text-h2-line: 24px;
+  --text-h2-weight: 600;
+  --text-h2-tracking: -0.012em;
+
+  --text-body-size: 13.5px;
+  --text-body-line: 23px;
+  --text-body-weight: 400;
+
+  --text-small-size: 11.5px;
+  --text-small-line: 18px;
+  --text-small-weight: 400;
+
+  --text-label-size: 9.5px;
+  --text-label-line: 14px;
+  --text-label-weight: 600;
+  --text-label-tracking: 0.2em;
+
+  --text-data-size: 12px;
+  --text-data-line: 19px;
+  --text-data-weight: 500;
+
+  /* Spacing --------------------------------------------------------------- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 28px;
+  --s7: 40px;
+  --s8: 56px;
+
+  /* Shape ----------------------------------------------------------------- */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+  --r-pill: 999px;
+
+  /* Motion ---------------------------------------------------------------- */
+  --dur-instant: 0ms;
+  --dur-fast: 110ms;
+  --dur-base: 160ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layers ---------------------------------------------------------------- */
+  --z-sticky: 10;
+  --z-dropdown: 100;
+  --z-modal: 1000;
+  --z-toast: 1100;
+}
+
+/* Dark theme — default ---------------------------------------------------- */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #070a0c;
+  --surface: #0d1215;
+  --surface-2: #121a1f;
+  --surface-3: #18232a;
+
+  --border: #1d2a31;
+  --border-strong: #2c3d47;
+
+  --text: #e7eef2;
+  --text-muted: #8aa0ac;
+  --text-faint: #5b6f7a;
+
+  --accent: #b6f24a;
+  --accent-hover: #c8ff66;
+  --accent-soft: #1c2a10;
+  --on-accent: #0a1404;
+
+  --critical: #ff6b5e;
+  --critical-soft: #2a1311;
+  --high: #ffa657;
+  --high-soft: #2a1d10;
+  --medium: #e3c341;
+  --medium-soft: #26220f;
+  --low: #7fb3d5;
+  --low-soft: #122029;
+  --ok: #5ee0a0;
+  --ok-soft: #0f261b;
+
+  --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.75);
+}
+
+/* Light theme ------------------------------------------------------------- */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f2f3ee;
+  --surface: #ffffff;
+  --surface-2: #eaebe4;
+  --surface-3: #dfe1d8;
+
+  --border: #d5d8cc;
+  --border-strong: #b6bbab;
+
+  --text: #0d1215;
+  --text-muted: #55605a;
+  --text-faint: #89928b;
+
+  --accent: #3f6b00;
+  --accent-hover: #325600;
+  --accent-soft: #e8f5cf;
+  --on-accent: #ffffff;
+
+  --critical: #b3261e;
+  --critical-soft: #fbe9e7;
+  --high: #a35800;
+  --high-soft: #fdf0e2;
+  --medium: #7a6400;
+  --medium-soft: #f8f2d6;
+  --low: #2c5f80;
+  --low-soft: #e7f0f6;
+  --ok: #0b6b45;
+  --ok-soft: #e4f4ec;
+
+  --shadow-float: 0 18px 48px rgba(13, 18, 21, 0.14);
+}
+
+/* Baseline ---------------------------------------------------------------- */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: var(--text-body-weight) var(--text-body-size) / var(--text-body-line) var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
