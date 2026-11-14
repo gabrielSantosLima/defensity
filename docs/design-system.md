@@ -25,14 +25,11 @@ page is the entry point; the values are not repeated here.
 - **Near-square.** Radius 2–4 px; 999 px only for the progress bar.
 - **Dark first.** Light is a full variant, checked token by token.
 
-## Visual references
+## Visual reference
 
 | File | Status |
 | --- | --- |
 | `docs/design-system-c.html` | Chosen direction with the final typography |
-| `docs/font-specimen.html` | Typography comparison |
-| `docs/design-system-a.html`, `docs/design-system-b.html` | Rejected directions |
-| `docs/design-system.html` | Side-by-side comparison |
 
 When the prototype and the specification disagree, the specification wins and the
 prototype is updated.

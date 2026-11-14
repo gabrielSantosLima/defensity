@@ -54,15 +54,14 @@ Out of scope for this version:
 - Iconography beyond the stroke rule defined in [components.md](components.md).
 - Illustration, marketing assets and installer branding.
 
-## Status of the visual references
+## Visual reference
 
-The HTML prototypes remain in `docs/` as the visual proof of the specification:
+One HTML prototype remains as the visual proof of the specification:
 
 | File | Status |
 | --- | --- |
 | `docs/design-system-c.html` | Chosen direction, with the final typography |
-| `docs/font-specimen.html` | Typography comparison that led to Inter + JetBrains Mono |
-| `docs/design-system-a.html`, `docs/design-system-b.html` | Rejected directions, kept as history |
 
-The prototype is a reference, not the source of truth. When the two disagree,
-this folder wins and the prototype is updated.
+It is a reference, not the source of truth. When the two disagree, this folder
+wins and the prototype is updated. The prototypes of the rejected directions and
+the typography comparison were removed once the decisions were recorded here.

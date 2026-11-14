@@ -20,7 +20,8 @@ corners, dark theme as default.
 
 - The interface reads as part of the pipeline, close to a CLI or editor.
 - Density is high and requires the typography decision below to stay readable.
-- The rejected directions remain in `docs/` as history.
+- The rejected directions are not kept as files; the decision record above is
+  the only history that matters.
 
 ## DS-002 — Typography
 
