@@ -85,8 +85,8 @@ A desktop project. It ships as an installer or archive.
 
 ## Skills
 
-Universal skills live in `.agent/skills/<id>/SKILL.md`, a read-only git submodule
-pinned to the harness repository.
+Universal skills are copied into `.agent/skills/<id>/SKILL.md` from the harness
+repository at the commit recorded in `.harness.json`. Treat them as read-only.
 
 Before a task that matches a skill, read its `SKILL.md` and follow it:
 
@@ -98,8 +98,9 @@ Before a task that matches a skill, read its `SKILL.md` and follow it:
 - `logo` - design a logo system with five versions before creating SVGs.
 - `github-pages` - publish a static site or generated documentation to GitHub Pages.
 
-Do not copy or edit files under `.agent/skills/`. To add or change a skill, write a
-proposal to `docs/skill-proposals/<id>.md` and apply it in the harness repository.
+Do not edit files under `.agent/skills/`. To add or change a skill, write a
+proposal to `docs/skill-proposals/<id>.md`, update the skill in the harness
+repository and copy the updated skill into `.agent/skills/`.
 
 ## Secrets and safety
 
