@@ -38,6 +38,7 @@ export interface AgentStartPayload {
   baseUrl: string;
   limits: { maxToolResultChars: number; budget: number; maxTokens: number };
   seed?: string;
+  allowInvalidCertificates: boolean;
 }
 
 export interface AgentService {
@@ -69,6 +70,7 @@ export function createAgentService(handlers: AgentHandlers): AgentService {
         workspace: payload.workspace as WireStartPayload["workspace"],
         limits: payload.limits,
         seed: payload.seed,
+        allowInvalidCertificates: payload.allowInvalidCertificates,
       };
 
       const entry = path.join(__dirname, "..", "agent", "index.js");

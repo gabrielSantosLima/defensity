@@ -51,6 +51,9 @@ function totalUsage(): Usage {
 }
 
 async function start(payload: AgentStartPayload): Promise<void> {
+  if (payload.allowInvalidCertificates) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
   try {
     const result = await runAgent(payload, emit, controller.signal);
     port.postMessage({

@@ -4,6 +4,7 @@ import { registerProviderHandlers } from "./providers";
 import { registerRunHandlers } from "./runs";
 import { registerSettingsHandlers } from "./settings";
 import { registerWorkspaceHandlers } from "./workspaces";
+import { registerZoomHandlers } from "./zoom";
 
 export function registerIpc(useCases: AppUseCases): void {
   registerWorkspaceHandlers(useCases);
@@ -11,4 +12,5 @@ export function registerIpc(useCases: AppUseCases): void {
   registerProviderHandlers(useCases);
   registerRunHandlers(useCases);
   registerDialogHandlers();
+  registerZoomHandlers();
 }

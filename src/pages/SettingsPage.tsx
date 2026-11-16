@@ -15,6 +15,7 @@ export function SettingsPage() {
   const [baseUrlDraft, setBaseUrlDraft] = useState("");
   const [budget, setBudget] = useState("");
   const [runBudget, setRunBudget] = useState("");
+  const [allowInvalid, setAllowInvalid] = useState(false);
   const [dockerHost, setDockerHost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export function SettingsPage() {
       setSettings(current);
       setBudget(String(current.compactionBudget));
       setRunBudget(String(current.runTokenBudget));
+      setAllowInvalid(current.allowInvalidCertificates);
       setDockerHost(current.dockerHost);
       setBaseUrlDraft(current.compatibleBaseUrl);
     } catch (caught) {
@@ -95,6 +97,7 @@ export function SettingsPage() {
       const updated = await window.defensity.saveSettings({
         compactionBudget: Number(budget),
         runTokenBudget: Number(runBudget),
+        allowInvalidCertificates: allowInvalid,
         dockerHost,
       });
       setSettings(updated);
@@ -255,6 +258,19 @@ export function SettingsPage() {
               value={runBudget}
               onChange={(event) => setRunBudget(event.target.value)}
             />
+          </Field>
+          <Field
+            label="TLS verification"
+            hint="Enable only for test targets with self-signed certificates. Applies to agent requests and probe containers."
+          >
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={allowInvalid}
+                onChange={(event) => setAllowInvalid(event.target.checked)}
+              />
+              Allow invalid certificates in requests
+            </label>
           </Field>
           <Field
             label="Docker host"

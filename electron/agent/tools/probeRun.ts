@@ -85,6 +85,9 @@ export const probeRunTool: Tool = {
         "host.docker.internal:host-gateway",
         "-e",
         `PROBE_SPEC=${JSON.stringify(spec)}`,
+        ...(context.allowInvalidCertificates
+          ? ["-e", "NODE_TLS_REJECT_UNAUTHORIZED=0"]
+          : []),
         "defensity/probe:1",
       ],
       60000,

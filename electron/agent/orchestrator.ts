@@ -96,6 +96,7 @@ export async function runAgent(
     root,
     targetUrl: payload.workspace.targetUrl,
     libraryArtifactPath: payload.workspace.libraryArtifactPath,
+    allowInvalidCertificates: payload.allowInvalidCertificates,
   });
   const provider = createProvider({
     provider: payload.provider,

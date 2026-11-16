@@ -200,6 +200,7 @@ export interface Settings {
   runTokenBudget: number;
   dockerHost: string;
   compatibleBaseUrl: string;
+  allowInvalidCertificates: boolean;
   providerKeys: Record<ProviderId, boolean>;
 }
 
@@ -220,12 +221,13 @@ export interface DefensityApi {
   getSettings: () => Promise<Settings>;
   saveSettings: (
     patch: Partial<
-      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl">
+      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl" | "allowInvalidCertificates">
     >,
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
   startRun: (workspaceId: string) => Promise<Run>;
   rerunRun: (runId: string) => Promise<Run>;
+  zoomBy: (delta: number) => Promise<void>;
   cancelRun: (runId: string) => Promise<void>;
   getRun: (runId: string) => Promise<Run | null>;
   listRuns: (workspaceId: string) => Promise<Run[]>;

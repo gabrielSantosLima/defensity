@@ -3,6 +3,7 @@ export interface EngineSettings {
   runTokenBudget: number;
   dockerHost: string;
   compatibleBaseUrl: string;
+  allowInvalidCertificates: boolean;
 }
 
 export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
@@ -10,6 +11,7 @@ export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   runTokenBudget: 200000,
   dockerHost: "",
   compatibleBaseUrl: "",
+  allowInvalidCertificates: false,
 };
 
 export const MIN_COMPACTION_BUDGET = 20000;
@@ -20,6 +22,7 @@ export function normalizeEngineSettings(input: {
   runTokenBudget?: number;
   dockerHost?: string;
   compatibleBaseUrl?: string;
+  allowInvalidCertificates?: boolean;
 }): EngineSettings {
   const budget = Number(input.compactionBudget);
   const validBudget =
@@ -40,6 +43,7 @@ export function normalizeEngineSettings(input: {
     compatibleBaseUrl:
       input.compatibleBaseUrl?.trim() ??
       DEFAULT_ENGINE_SETTINGS.compatibleBaseUrl,
+    allowInvalidCertificates: Boolean(input.allowInvalidCertificates),
   };
 }
 
@@ -48,6 +52,7 @@ export function assertEnginePatch(patch: {
   runTokenBudget?: number;
   dockerHost?: string;
   compatibleBaseUrl?: string;
+  allowInvalidCertificates?: boolean;
 }): void {
   if (patch.runTokenBudget !== undefined) {
     if (

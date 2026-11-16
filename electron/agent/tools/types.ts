@@ -2,6 +2,7 @@ export interface ToolContext {
   root: string | null;
   targetUrl: string | null;
   libraryArtifactPath: string | null;
+  allowInvalidCertificates: boolean;
 }
 
 export interface ToolResult {

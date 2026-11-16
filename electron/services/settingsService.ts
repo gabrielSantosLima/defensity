@@ -41,6 +41,8 @@ export function createSettingsService(database: DatabaseSync): SettingsService {
         compatibleBaseUrl:
           read("compatibleBaseUrl") ??
           DEFAULT_ENGINE_SETTINGS.compatibleBaseUrl,
+        allowInvalidCertificates:
+          (read("allowInvalidCertificates") ?? "false") === "true",
       });
     },
 
@@ -49,6 +51,7 @@ export function createSettingsService(database: DatabaseSync): SettingsService {
       write("runTokenBudget", String(settings.runTokenBudget));
       write("dockerHost", settings.dockerHost);
       write("compatibleBaseUrl", settings.compatibleBaseUrl);
+      write("allowInvalidCertificates", String(settings.allowInvalidCertificates));
     },
   };
 }

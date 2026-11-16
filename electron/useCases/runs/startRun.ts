@@ -126,6 +126,8 @@ export class StartRunUseCase {
       apiKey,
       baseUrl,
       seed,
+      allowInvalidCertificates:
+        this.settings.get().allowInvalidCertificates,
       limits: {
         maxToolResultChars: 12000,
         budget: this.settings.get().compactionBudget,

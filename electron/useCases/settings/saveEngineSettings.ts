@@ -13,6 +13,7 @@ export class SaveEngineSettingsUseCase {
     runTokenBudget?: number;
     dockerHost?: string;
     compatibleBaseUrl?: string;
+    allowInvalidCertificates?: boolean;
   }): EngineSettings {
     assertEnginePatch(patch);
     const current = this.settings.get();

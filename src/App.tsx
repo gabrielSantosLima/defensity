@@ -71,6 +71,18 @@ export function App() {
   }, [refresh]);
 
   useEffect(() => {
+    function onWheel(event: WheelEvent) {
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+      event.preventDefault();
+      void window.defensity.zoomBy(event.deltaY < 0 ? 0.1 : -0.1);
+    }
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, []);
+
+  useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (!event.altKey) {
         return;
