@@ -8,6 +8,7 @@ import type {
 } from "../../shared/types";
 import { Button } from "../components/Button";
 import { AgentMark } from "../components/AgentMark";
+import { Markdown } from "../components/Markdown";
 import { Spinner } from "../components/Spinner";
 import { Panel } from "../components/ui";
 import { errorMessage } from "../lib/format";
@@ -204,7 +205,7 @@ export function RunConsole({
     if (event.type === "assistant.message") {
       return (
         <div className="tl-text" key={event.id}>
-          {String(event.payload.text ?? "")}
+          <Markdown>{String(event.payload.text ?? "")}</Markdown>
         </div>
       );
     }
@@ -395,7 +396,7 @@ export function RunConsole({
 
           {live ? (
             <div className="tl-text tl-text--live">
-              {live}
+              <Markdown>{live}</Markdown>
               <span className="caret" />
             </div>
           ) : null}
