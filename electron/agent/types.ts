@@ -81,6 +81,7 @@ export type AgentEventType =
   | "assistant.message"
   | "tool.call"
   | "tool.result"
+  | "finding"
   | "hypothesis"
   | "compaction"
   | "usage";

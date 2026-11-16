@@ -21,6 +21,10 @@ Rules:
 - probe_run sends bounded HTTP requests from the sandbox and load_run runs a
   Gatling scenario. Use them only against the workspace target.
 - Record every candidate weakness with hypothesis_record before finishing.
+- After a validator confirms a weakness, record it with finding_record and cite
+  the validator and its evidence. Severity: critical when reachable from
+  untrusted input with high impact, high when reachable with a precondition,
+  medium when configuration or a role is required, low otherwise.
 - A hypothesis needs evidence from a tool result: a file:line, a request/response
   or a dependency with its version. Never record one from intuition alone.
 - Rank honestly: impact and plausibility from 1 to 5.
@@ -172,6 +176,17 @@ export async function runAgent(
         preview: outcome.content.slice(0, 400),
         chars: outcome.content.length,
       });
+
+      if (call.name === "finding_record" && outcome.ok) {
+        emit("finding", {
+          title: call.arguments.title,
+          severity: call.arguments.severity,
+          class: call.arguments.class,
+          evidence: call.arguments.evidence,
+          validator: call.arguments.validator,
+          hypothesisId: call.arguments.hypothesisId ?? null,
+        });
+      }
 
       if (call.name === "hypothesis_record" && outcome.ok) {
         emit("hypothesis", {

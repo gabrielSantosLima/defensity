@@ -3,12 +3,14 @@ import type {
   RunEventType,
 } from "../../../shared/types";
 import type { Clock, Ids } from "../../services/clock";
+import type { FindingService } from "../../services/findingService";
 import type { HypothesisService } from "../../services/hypothesisService";
 import type { RunService } from "../../services/runService";
 
 interface Deps {
   runs: RunService;
   hypotheses: HypothesisService;
+  findings: FindingService;
   clock: Clock;
   ids: Ids;
 }
@@ -16,12 +18,14 @@ interface Deps {
 export class RecordRunEventUseCase {
   private readonly runs: RunService;
   private readonly hypotheses: HypothesisService;
+  private readonly findings: FindingService;
   private readonly clock: Clock;
   private readonly ids: Ids;
 
-  constructor({ runs, hypotheses, clock, ids }: Deps) {
+  constructor({ runs, hypotheses, findings, clock, ids }: Deps) {
     this.runs = runs;
     this.hypotheses = hypotheses;
+    this.findings = findings;
     this.clock = clock;
     this.ids = ids;
   }
@@ -54,6 +58,23 @@ export class RecordRunEventUseCase {
         proposedTest: input.payload.proposedTest
           ? String(input.payload.proposedTest)
           : null,
+        createdAt: this.clock.now(),
+      });
+    }
+
+    if (input.type === "finding") {
+      this.findings.insert({
+        id: this.ids.newId(),
+        runId: input.runId,
+        hypothesisId: input.payload.hypothesisId
+          ? String(input.payload.hypothesisId)
+          : null,
+        title: String(input.payload.title ?? ""),
+        severity: String(input.payload.severity ?? "low") as never,
+        class: String(input.payload.class ?? "other"),
+        evidence: String(input.payload.evidence ?? ""),
+        validator: String(input.payload.validator ?? ""),
+        status: "open",
         createdAt: this.clock.now(),
       });
     }

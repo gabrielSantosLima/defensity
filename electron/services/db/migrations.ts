@@ -87,6 +87,22 @@ export const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS hypotheses_run_idx ON hypotheses(run_id);
   `,
+  `
+  CREATE TABLE IF NOT EXISTS findings (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    hypothesis_id TEXT,
+    title TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    class TEXT NOT NULL,
+    evidence TEXT NOT NULL,
+    validator TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS findings_run_idx ON findings(run_id);
+  `,
 ];
 
 export function runMigrations(database: DatabaseSync): void {

@@ -82,6 +82,7 @@ export type RunEventType =
   | "assistant.message"
   | "tool.call"
   | "tool.result"
+  | "finding"
   | "hypothesis"
   | "compaction"
   | "usage"
@@ -125,6 +126,21 @@ export interface Hypothesis {
   rationale: string;
   evidence: string;
   proposedTest: string | null;
+  createdAt: string;
+}
+
+export type Severity = "critical" | "high" | "medium" | "low";
+
+export interface Finding {
+  id: string;
+  runId: string;
+  hypothesisId: string | null;
+  title: string;
+  severity: Severity;
+  class: string;
+  evidence: string;
+  validator: string;
+  status: string;
   createdAt: string;
 }
 
@@ -209,6 +225,9 @@ export interface DefensityApi {
   listRuns: (workspaceId: string) => Promise<Run[]>;
   listRunEvents: (runId: string) => Promise<RunEvent[]>;
   listHypotheses: (runId: string) => Promise<Hypothesis[]>;
+  listFindings: (runId: string) => Promise<Finding[]>;
+  generateReport: (runId: string) => Promise<string>;
+  saveReport: (runId: string) => Promise<string | null>;
   onRunUpdate: (listener: (update: RunUpdate) => void) => () => void;
   setProviderKey: (provider: ProviderId, key: string) => Promise<void>;
   clearProviderKey: (provider: ProviderId) => Promise<void>;

@@ -1088,6 +1088,91 @@ tbody tr.clickable:focus-visible {
   text-transform: uppercase;
 }
 
+
+.tl-finding {
+  display: grid;
+  gap: 7px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text-faint);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.tl-finding--critical {
+  border-left-color: var(--critical);
+  background: color-mix(in srgb, var(--critical-soft) 55%, var(--surface-2));
+}
+
+.tl-finding--critical .chip {
+  color: var(--critical);
+  border-color: color-mix(in srgb, var(--critical) 50%, transparent);
+}
+
+.tl-finding--high {
+  border-left-color: var(--high);
+  background: color-mix(in srgb, var(--high-soft) 55%, var(--surface-2));
+}
+
+.tl-finding--high .chip {
+  color: var(--high);
+  border-color: color-mix(in srgb, var(--high) 50%, transparent);
+}
+
+.tl-finding--medium {
+  border-left-color: var(--medium);
+}
+
+.tl-finding--medium .chip {
+  color: var(--medium);
+  border-color: color-mix(in srgb, var(--medium) 50%, transparent);
+}
+
+.tl-finding--low .chip {
+  color: var(--low);
+  border-color: color-mix(in srgb, var(--low) 50%, transparent);
+}
+
+.tl-finding-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tl-finding-validator {
+  color: var(--text-faint);
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tl-finding-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.report-modal {
+  width: min(760px, 100%);
+  max-height: 86vh;
+}
+
+.report-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.report-body pre {
+  margin: 0;
+  color: var(--text-muted);
+  font: 400 11.5px/1.65 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 900px) {
   .app-body {
     grid-template-columns: 1fr;

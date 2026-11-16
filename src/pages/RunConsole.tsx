@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+  Finding,
   Hypothesis,
   Run,
   RunEvent,
@@ -34,6 +35,9 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
+  const [findings, setFindings] = useState<Finding[]>([]);
+  const [report, setReport] = useState<string | null>(null);
+  const [reportPath, setReportPath] = useState<string | null>(null);
   const [live, setLive] = useState("");
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
@@ -41,14 +45,16 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
 
   const refresh = useCallback(async () => {
     try {
-      const [current, history, found] = await Promise.all([
+      const [current, history, found, confirmed] = await Promise.all([
         window.defensity.getRun(runId),
         window.defensity.listRunEvents(runId),
         window.defensity.listHypotheses(runId),
+        window.defensity.listFindings(runId),
       ]);
       setRun(current);
       setEvents(history);
       setHypotheses(found);
+      setFindings(confirmed);
     } catch (caught) {
       setError(errorMessage(caught));
     }
@@ -107,6 +113,23 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
     }
   }
 
+  async function openReport() {
+    try {
+      setReportPath(null);
+      setReport(await window.defensity.generateReport(runId));
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  }
+
+  async function saveReport() {
+    try {
+      setReportPath(await window.defensity.saveReport(runId));
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  }
+
   if (!run) {
     return (
       <div className="page">
@@ -133,11 +156,18 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           <span>{run.totalTokens.toLocaleString()} tokens</span>
           <span>·</span>
           <span>
+            {findings.length} finding{findings.length === 1 ? "" : "s"}
+          </span>
+          <span>·</span>
+          <span>
             {hypotheses.length} hypothes
             {hypotheses.length === 1 ? "is" : "es"}
           </span>
         </div>
         <div className="page-head-actions">
+          <Button variant="secondary" size="sm" onClick={() => void openReport()}>
+            Report
+          </Button>
           {running ? (
             <Button variant="danger" size="sm" onClick={() => void cancel()}>
               Cancel run
@@ -167,7 +197,8 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
               (event) =>
                 !(
                   (event.type === "tool.call" || event.type === "tool.result") &&
-                  event.payload.name === "hypothesis_record"
+                  (event.payload.name === "hypothesis_record" ||
+                    event.payload.name === "finding_record")
                 ),
             )
             .map((event) => {
@@ -213,6 +244,28 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
               return (
                 <div className="tl-text" key={event.id}>
                   {String(event.payload.text ?? "")}
+                </div>
+              );
+            }
+            if (event.type === "finding") {
+              const severity = String(event.payload.severity ?? "low");
+              return (
+                <div
+                  className={`tl-finding tl-finding--${severity}`}
+                  key={event.id}
+                >
+                  <div className="tl-finding-head">
+                    <span className="chip">{severity}</span>
+                    <span className="tl-finding-validator">
+                      via {String(event.payload.validator ?? "unknown")}
+                    </span>
+                  </div>
+                  <p className="tl-finding-title">
+                    {String(event.payload.title ?? "")}
+                  </p>
+                  <pre className="tl-pre">
+                    {String(event.payload.evidence ?? "")}
+                  </pre>
                 </div>
               );
             }
@@ -290,6 +343,42 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           <div ref={endRef} />
         </div>
       </Panel>
+
+      {report !== null ? (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setReport(null);
+            }
+          }}
+        >
+          <div className="modal report-modal" role="dialog" aria-modal="true">
+            <header className="modal-head">
+              <span>Report</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setReport(null)}
+              >
+                Close
+              </Button>
+            </header>
+            <div className="report-body">
+              <pre>{report}</pre>
+            </div>
+            <footer className="model-foot">
+              <span className="lbl">
+                {reportPath ?? `${report.length} characters`}
+              </span>
+              <span style={{ flex: 1 }} />
+              <Button size="sm" variant="primary" onClick={() => void saveReport()}>
+                Save as Markdown
+              </Button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

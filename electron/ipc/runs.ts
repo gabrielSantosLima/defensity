@@ -1,4 +1,5 @@
-import { ipcMain } from "electron";
+import { writeFile } from "node:fs/promises";
+import { dialog, ipcMain } from "electron";
 import type { AppUseCases } from "./context";
 
 export function registerRunHandlers(useCases: AppUseCases): void {
@@ -25,4 +26,26 @@ export function registerRunHandlers(useCases: AppUseCases): void {
   ipcMain.handle("runs:hypotheses", (_event, runId: string) =>
     useCases.listHypotheses.execute(runId),
   );
+
+  ipcMain.handle("runs:findings", (_event, runId: string) =>
+    useCases.listFindings.execute(runId),
+  );
+
+  ipcMain.handle("reports:generate", (_event, runId: string) =>
+    useCases.generateReport.execute(runId),
+  );
+
+  ipcMain.handle("reports:save", async (_event, runId: string) => {
+    const markdown = useCases.generateReport.execute(runId);
+    const result = await dialog.showSaveDialog({
+      title: "Save defensity report",
+      defaultPath: `defensity-report-${runId.slice(0, 8)}.md`,
+      filters: [{ name: "Markdown", extensions: ["md"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return null;
+    }
+    await writeFile(result.filePath, markdown, "utf8");
+    return result.filePath;
+  });
 }

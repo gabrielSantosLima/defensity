@@ -7,6 +7,7 @@ import { createAgentService } from "./services/agentService";
 import { systemClock, systemIds } from "./services/clock";
 import { openDatabase } from "./services/db/database";
 import { fileService } from "./services/fileService";
+import { createFindingService } from "./services/findingService";
 import { createHypothesisService } from "./services/hypothesisService";
 import { createProviderService } from "./services/providerService";
 import { createRunService } from "./services/runService";
@@ -20,6 +21,8 @@ import { SetProviderKeyUseCase } from "./useCases/providers/setProviderKey";
 import { CancelRunUseCase } from "./useCases/runs/cancelRun";
 import { FinishRunUseCase } from "./useCases/runs/finishRun";
 import { GetRunUseCase } from "./useCases/runs/getRun";
+import { GenerateReportUseCase } from "./useCases/runs/generateReport";
+import { ListFindingsUseCase } from "./useCases/runs/listFindings";
 import { ListHypothesesUseCase } from "./useCases/runs/listHypotheses";
 import { ListRunEventsUseCase } from "./useCases/runs/listRunEvents";
 import { ListRunsUseCase } from "./useCases/runs/listRuns";
@@ -64,10 +67,12 @@ function compose(userData: string): {
   const providers = createProviderService();
   const sandbox = createSandboxService();
   const hypotheses = createHypothesisService(database);
+  const findings = createFindingService(database);
 
   const recordRunEvent = new RecordRunEventUseCase({
     runs,
     hypotheses,
+    findings,
     clock: systemClock,
     ids: systemIds,
   });
@@ -129,6 +134,13 @@ function compose(userData: string): {
     listRuns: new ListRunsUseCase(runs),
     listRunEvents: new ListRunEventsUseCase(runs),
     listHypotheses: new ListHypothesesUseCase(hypotheses),
+    listFindings: new ListFindingsUseCase(findings),
+    generateReport: new GenerateReportUseCase({
+      runs,
+      workspaces,
+      findings,
+      hypotheses,
+    }),
   };
 
   return { useCases, dispose: () => agent.dispose() };

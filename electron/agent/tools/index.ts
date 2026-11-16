@@ -3,6 +3,7 @@ import { depsScanTool } from "./depsScan";
 import { fsGrepTool } from "./fsGrep";
 import { fsListTool } from "./fsList";
 import { fsReadTool } from "./fsRead";
+import { findingRecordTool } from "./findingRecord";
 import { hypothesisRecordTool } from "./hypothesisRecord";
 import { loadRunTool } from "./loadRun";
 import type { Tool, ToolContext, ToolResult } from "./types";
@@ -18,6 +19,7 @@ const TOOLS: Tool[] = [
   probeRunTool,
   loadRunTool,
   hypothesisRecordTool,
+  findingRecordTool,
 ];
 
 export interface Toolset {
