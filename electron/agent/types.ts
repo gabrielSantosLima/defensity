@@ -73,7 +73,7 @@ export interface AgentStartPayload {
   apiKey: string;
   baseUrl: string;
   workspace: AgentWorkspace;
-  limits: { maxSteps: number; maxToolResultChars: number; budget: number };
+  limits: { maxSteps: number; maxToolResultChars: number; budget: number; maxTokens: number };
 }
 
 export type AgentEventType =

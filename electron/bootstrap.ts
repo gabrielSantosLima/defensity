@@ -27,6 +27,7 @@ import { ListHypothesesUseCase } from "./useCases/runs/listHypotheses";
 import { ListRunEventsUseCase } from "./useCases/runs/listRunEvents";
 import { ListRunsUseCase } from "./useCases/runs/listRuns";
 import { RecordRunEventUseCase } from "./useCases/runs/recordRunEvent";
+import { RecoverRunsUseCase } from "./useCases/runs/recoverRuns";
 import { StartRunUseCase } from "./useCases/runs/startRun";
 import { GetSettingsUseCase } from "./useCases/settings/getSettings";
 import { SaveEngineSettingsUseCase } from "./useCases/settings/saveEngineSettings";
@@ -142,6 +143,12 @@ function compose(userData: string): {
       hypotheses,
     }),
   };
+
+  new RecoverRunsUseCase({
+    runs,
+    clock: systemClock,
+    ids: systemIds,
+  }).execute();
 
   return { useCases, dispose: () => agent.dispose() };
 }

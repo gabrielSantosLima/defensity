@@ -109,6 +109,7 @@ export class StartRunUseCase {
         maxSteps: 8,
         maxToolResultChars: 12000,
         budget: this.settings.get().compactionBudget,
+        maxTokens: this.settings.get().runTokenBudget,
       },
     });
 

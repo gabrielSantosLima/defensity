@@ -34,6 +34,9 @@ export function createSettingsService(database: DatabaseSync): SettingsService {
           read("compactionBudget") ??
             DEFAULT_ENGINE_SETTINGS.compactionBudget,
         ),
+        runTokenBudget: Number(
+          read("runTokenBudget") ?? DEFAULT_ENGINE_SETTINGS.runTokenBudget,
+        ),
         dockerHost: read("dockerHost") ?? DEFAULT_ENGINE_SETTINGS.dockerHost,
         compatibleBaseUrl:
           read("compatibleBaseUrl") ??
@@ -43,6 +46,7 @@ export function createSettingsService(database: DatabaseSync): SettingsService {
 
     save(settings) {
       write("compactionBudget", String(settings.compactionBudget));
+      write("runTokenBudget", String(settings.runTokenBudget));
       write("dockerHost", settings.dockerHost);
       write("compatibleBaseUrl", settings.compatibleBaseUrl);
     },

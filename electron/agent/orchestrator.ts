@@ -140,6 +140,12 @@ export async function runAgent(
         completionTokens: result.usage.completionTokens,
         totalTokens: result.usage.totalTokens,
       });
+
+      if (usage.totalTokens > payload.limits.maxTokens) {
+        throw new Error(
+          `Token budget exhausted: ${usage.totalTokens} of ${payload.limits.maxTokens}`,
+        );
+      }
     }
 
     if (result.text.trim()) {

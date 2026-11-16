@@ -14,6 +14,7 @@ export function SettingsPage() {
   const [keyDraft, setKeyDraft] = useState("");
   const [baseUrlDraft, setBaseUrlDraft] = useState("");
   const [budget, setBudget] = useState("");
+  const [runBudget, setRunBudget] = useState("");
   const [dockerHost, setDockerHost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export function SettingsPage() {
       const current = await window.defensity.getSettings();
       setSettings(current);
       setBudget(String(current.compactionBudget));
+      setRunBudget(String(current.runTokenBudget));
       setDockerHost(current.dockerHost);
       setBaseUrlDraft(current.compatibleBaseUrl);
     } catch (caught) {
@@ -92,6 +94,7 @@ export function SettingsPage() {
     try {
       const updated = await window.defensity.saveSettings({
         compactionBudget: Number(budget),
+        runTokenBudget: Number(runBudget),
         dockerHost,
       });
       setSettings(updated);
@@ -233,6 +236,21 @@ export function SettingsPage() {
               step={1000}
               value={budget}
               onChange={(event) => setBudget(event.target.value)}
+            />
+          </Field>
+          <Field
+            label="Run token budget"
+            htmlFor="run-token-budget"
+            hint="Hard cap per run. The run fails when the total exceeds this value."
+          >
+            <input
+              id="run-token-budget"
+              className="input"
+              type="number"
+              min={10000}
+              step={10000}
+              value={runBudget}
+              onChange={(event) => setRunBudget(event.target.value)}
             />
           </Field>
           <Field

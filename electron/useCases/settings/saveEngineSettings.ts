@@ -10,6 +10,7 @@ export class SaveEngineSettingsUseCase {
 
   execute(patch: {
     compactionBudget?: number;
+    runTokenBudget?: number;
     dockerHost?: string;
     compatibleBaseUrl?: string;
   }): EngineSettings {

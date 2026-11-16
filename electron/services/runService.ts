@@ -12,6 +12,7 @@ export interface RunService {
   create(run: Run): void;
   get(id: string): Run | null;
   listByWorkspace(workspaceId: string): Run[];
+  listActive(): Run[];
   setStatus(
     id: string,
     status: RunStatus,
@@ -130,6 +131,15 @@ export function createRunService(database: DatabaseSync): RunService {
           "SELECT * FROM runs WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 20",
         )
         .all(workspaceId) as unknown as RunRow[];
+      return rows.map(toRun);
+    },
+
+    listActive() {
+      const rows = database
+        .prepare(
+          "SELECT * FROM runs WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
+        )
+        .all() as unknown as RunRow[];
       return rows.map(toRun);
     },
 

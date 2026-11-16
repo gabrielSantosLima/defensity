@@ -196,6 +196,7 @@ export interface WorkspaceInput {
 
 export interface Settings {
   compactionBudget: number;
+  runTokenBudget: number;
   dockerHost: string;
   compatibleBaseUrl: string;
   providerKeys: Record<ProviderId, boolean>;
@@ -215,7 +216,7 @@ export interface DefensityApi {
   getSettings: () => Promise<Settings>;
   saveSettings: (
     patch: Partial<
-      Pick<Settings, "compactionBudget" | "dockerHost" | "compatibleBaseUrl">
+      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl">
     >,
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
