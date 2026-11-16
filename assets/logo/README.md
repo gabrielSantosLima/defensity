@@ -40,6 +40,7 @@ together without a new visual language.
 | `app/mark.svg` | Light | Ink with `#3F6B00` accent |
 | `app/mark-dark.svg` | Dark | Paper with Acid accent |
 | `app/mark-mono.svg` | Any | `currentColor` |
+| `app/mark-neutral.svg` | Any | Neutral `#8AA0AC`, single colour |
 | `app/app-icon.svg` | Transparent | Paper with Acid accent |
 
 Concept: an intact block with one corner removed and the accent marking the gap.

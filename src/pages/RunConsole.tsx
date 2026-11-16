@@ -7,6 +7,7 @@ import type {
   RunUpdate,
 } from "../../shared/types";
 import { Button } from "../components/Button";
+import { AgentMark } from "../components/AgentMark";
 import { Spinner } from "../components/Spinner";
 import { Panel } from "../components/ui";
 import { errorMessage } from "../lib/format";
@@ -399,7 +400,12 @@ export function RunConsole({
             </div>
           ) : null}
 
-          {running ? <div className="tl-usage">agent working…</div> : null}
+          {running ? (
+            <div className="agent-status">
+              <AgentMark size={12} />
+              <span>agent executing</span>
+            </div>
+          ) : null}
           <div ref={endRef} />
         </div>
       </Panel>
