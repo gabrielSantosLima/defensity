@@ -74,6 +74,7 @@ export interface AgentStartPayload {
   baseUrl: string;
   workspace: AgentWorkspace;
   limits: { maxToolResultChars: number; budget: number; maxTokens: number };
+  seed?: string;
 }
 
 export type AgentEventType =

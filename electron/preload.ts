@@ -16,6 +16,7 @@ const api: DefensityApi = {
   saveSettings: (patch) => ipcRenderer.invoke("settings:save", patch),
   listModels: (provider) => ipcRenderer.invoke("providers:listModels", provider),
   startRun: (workspaceId) => ipcRenderer.invoke("runs:start", workspaceId),
+  rerunRun: (runId) => ipcRenderer.invoke("runs:rerun", runId),
   cancelRun: (runId) => ipcRenderer.invoke("runs:cancel", runId),
   getRun: (runId) => ipcRenderer.invoke("runs:get", runId),
   listRuns: (workspaceId) => ipcRenderer.invoke("runs:list", workspaceId),

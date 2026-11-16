@@ -103,6 +103,7 @@ export const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS findings_run_idx ON findings(run_id);
   `,
+  `ALTER TABLE runs ADD COLUMN rerun_of TEXT;`,
 ];
 
 export function runMigrations(database: DatabaseSync): void {

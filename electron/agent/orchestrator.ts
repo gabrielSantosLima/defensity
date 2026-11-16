@@ -75,7 +75,13 @@ Allowed root: ${root ?? "(none)"}
 ${task}
 
 Finish with a short summary of what you inspected and how many hypotheses you
-recorded.`;
+recorded.${payload.seed ? `
+
+[previous run context]
+${payload.seed}
+
+Reuse what is still valid, but verify it before trusting. Do not repeat a tool
+call whose result is already in the context.` : ""}`;
 }
 
 const ZERO: Usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };

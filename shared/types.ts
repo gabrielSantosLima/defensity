@@ -104,6 +104,7 @@ export interface Run {
   completionTokens: number;
   totalTokens: number;
   stepCount: number;
+  rerunOf: string | null;
   createdAt: string;
 }
 
@@ -224,6 +225,7 @@ export interface DefensityApi {
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
   startRun: (workspaceId: string) => Promise<Run>;
+  rerunRun: (runId: string) => Promise<Run>;
   cancelRun: (runId: string) => Promise<void>;
   getRun: (runId: string) => Promise<Run | null>;
   listRuns: (workspaceId: string) => Promise<Run[]>;

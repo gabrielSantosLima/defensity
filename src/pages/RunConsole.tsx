@@ -60,12 +60,14 @@ function groupEvents(events: RunEvent[]): Block[] {
 interface RunConsoleProps {
   runId: string;
   workspaceName: string;
+  onRerun: (runId: string) => void;
   onBack: () => void;
 }
 
 export function RunConsole({
   runId,
   workspaceName,
+  onRerun,
   onBack,
 }: RunConsoleProps) {
   const [run, setRun] = useState<Run | null>(null);
@@ -77,6 +79,7 @@ export function RunConsole({
   const [live, setLive] = useState("");
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
+  const [rerunning, setRerunning] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = useCallback(async () => {
@@ -146,6 +149,19 @@ export function RunConsole({
       await window.defensity.cancelRun(runId);
     } catch (caught) {
       setError(errorMessage(caught));
+    }
+  }
+
+  async function rerun() {
+    setRerunning(true);
+    setError(null);
+    try {
+      const next = await window.defensity.rerunRun(runId);
+      onRerun(next.id);
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setRerunning(false);
     }
   }
 
@@ -335,8 +351,19 @@ export function RunConsole({
               {hypotheses.length} hypothes
               {hypotheses.length === 1 ? "is" : "es"}
             </span>
+            {run.rerunOf ? <span>· rerun</span> : null}
           </div>
           <div className="run-actions">
+            {!running ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={rerunning}
+                onClick={() => void rerun()}
+              >
+                Rerun
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               size="sm"

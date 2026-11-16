@@ -37,6 +37,7 @@ import { ListRunsUseCase } from "./useCases/runs/listRuns";
 import { RecordRunEventUseCase } from "./useCases/runs/recordRunEvent";
 import { RecoverRunsUseCase } from "./useCases/runs/recoverRuns";
 import { ClearRunHistoryUseCase } from "./useCases/runs/clearRunHistory";
+import { RerunRunUseCase } from "./useCases/runs/rerunRun";
 import { StartRunUseCase } from "./useCases/runs/startRun";
 import { GetSettingsUseCase } from "./useCases/settings/getSettings";
 import { SaveEngineSettingsUseCase } from "./useCases/settings/saveEngineSettings";
@@ -129,6 +130,19 @@ function compose(userData: string): {
     },
   });
 
+  const startRun = new StartRunUseCase({
+    workspaces,
+    runs,
+    secrets,
+    settings: settingsService,
+    agent,
+    sandbox,
+    hypotheses,
+    findings,
+    clock: systemClock,
+    ids: systemIds,
+  });
+
   const useCases: AppUseCases = {
     listWorkspaces: new ListWorkspacesUseCase(workspaces),
     getWorkspace: new GetWorkspaceUseCase(workspaces),
@@ -161,16 +175,8 @@ function compose(userData: string): {
       secrets,
       settings: settingsService,
     }),
-    startRun: new StartRunUseCase({
-      workspaces,
-      runs,
-      secrets,
-      settings: settingsService,
-      agent,
-      sandbox,
-      clock: systemClock,
-      ids: systemIds,
-    }),
+    startRun,
+    rerunRun: new RerunRunUseCase({ runs, startRun }),
     cancelRun: new CancelRunUseCase({ runs, agent }),
     clearRunHistory: new ClearRunHistoryUseCase(runs),
     getRun: new GetRunUseCase(runs),

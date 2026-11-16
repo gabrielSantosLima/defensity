@@ -3,6 +3,8 @@ import { baseUrlFor } from "../../entities/provider";
 import { createRunRecord, isRunActive } from "../../entities/run";
 import type { AgentService } from "../../services/agentService";
 import type { Clock, Ids } from "../../services/clock";
+import type { FindingService } from "../../services/findingService";
+import type { HypothesisService } from "../../services/hypothesisService";
 import type { RunService } from "../../services/runService";
 import type { SandboxService } from "../../services/sandboxService";
 import type { SecretService } from "../../services/secretService";
@@ -16,6 +18,8 @@ interface Deps {
   settings: SettingsService;
   agent: AgentService;
   sandbox: SandboxService;
+  hypotheses: HypothesisService;
+  findings: FindingService;
   clock: Clock;
   ids: Ids;
 }
@@ -27,6 +31,8 @@ export class StartRunUseCase {
   private readonly settings: SettingsService;
   private readonly agent: AgentService;
   private readonly sandbox: SandboxService;
+  private readonly hypotheses: HypothesisService;
+  private readonly findings: FindingService;
   private readonly clock: Clock;
   private readonly ids: Ids;
 
@@ -37,6 +43,8 @@ export class StartRunUseCase {
     settings,
     agent,
     sandbox,
+    hypotheses,
+    findings,
     clock,
     ids,
   }: Deps) {
@@ -46,11 +54,13 @@ export class StartRunUseCase {
     this.settings = settings;
     this.agent = agent;
     this.sandbox = sandbox;
+    this.hypotheses = hypotheses;
+    this.findings = findings;
     this.clock = clock;
     this.ids = ids;
   }
 
-  execute(workspaceId: string): Run {
+  execute(workspaceId: string, options?: { rerunOf?: string }): Run {
     const workspace = this.workspaces.get(workspaceId);
     if (!workspace) {
       throw new Error("Workspace not found");
@@ -81,6 +91,15 @@ export class StartRunUseCase {
       throw new Error("Set the base URL for the OpenAI-compatible provider");
     }
 
+    let seed: string | undefined;
+    if (options?.rerunOf) {
+      const previous = this.runs.get(options.rerunOf);
+      if (!previous || previous.workspaceId !== workspaceId) {
+        throw new Error("Previous run not found for this workspace");
+      }
+      seed = this.buildSeed(previous);
+    }
+
     const run = createRunRecord({
       id: this.ids.newId(),
       workspaceId: workspace.id,
@@ -88,6 +107,7 @@ export class StartRunUseCase {
       model: workspace.model,
       thinking: workspace.thinking,
       createdAt: this.clock.now(),
+      rerunOf: options?.rerunOf ?? null,
     });
 
     this.runs.create(run);
@@ -105,6 +125,7 @@ export class StartRunUseCase {
       },
       apiKey,
       baseUrl,
+      seed,
       limits: {
         maxToolResultChars: 12000,
         budget: this.settings.get().compactionBudget,
@@ -113,5 +134,44 @@ export class StartRunUseCase {
     });
 
     return run;
+  }
+
+  private buildSeed(previous: Run): string {
+    const events = this.runs.listEvents(previous.id);
+    const hypotheses = this.hypotheses.listByRun(previous.id);
+    const findings = this.findings.listByRun(previous.id);
+    const lines = [
+      `Previous run ${previous.id} ended as ${previous.status} after ${previous.stepCount} steps and ${previous.totalTokens} tokens.`,
+    ];
+
+    if (hypotheses.length > 0) {
+      lines.push("Hypotheses recorded:");
+      for (const hypothesis of hypotheses.slice(0, 12)) {
+        lines.push(
+          `- [${hypothesis.class} ${hypothesis.impact * hypothesis.plausibility}/25] ${hypothesis.statement} (evidence: ${hypothesis.evidence.slice(0, 160)})`,
+        );
+      }
+    }
+
+    if (findings.length > 0) {
+      lines.push("Validated findings:");
+      for (const finding of findings.slice(0, 12)) {
+        lines.push(
+          `- [${finding.severity}] ${finding.title} (validator: ${finding.validator})`,
+        );
+      }
+    }
+
+    const lastSummary = [...events]
+      .reverse()
+      .find((event) => event.type === "assistant.message");
+    if (lastSummary) {
+      lines.push(
+        "Last assistant summary:",
+        String(lastSummary.payload.text ?? "").slice(0, 1500),
+      );
+    }
+
+    return lines.join("\n");
   }
 }

@@ -17,6 +17,7 @@ export interface NewRunInput {
   model: string | null;
   thinking: ThinkingLevel | null;
   createdAt: string;
+  rerunOf?: string | null;
 }
 
 export function createRunRecord(input: NewRunInput): Run {
@@ -34,6 +35,7 @@ export function createRunRecord(input: NewRunInput): Run {
     completionTokens: 0,
     totalTokens: 0,
     stepCount: 0,
+    rerunOf: input.rerunOf ?? null,
     createdAt: input.createdAt,
   };
 }

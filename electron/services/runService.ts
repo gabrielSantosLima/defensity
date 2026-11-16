@@ -48,6 +48,7 @@ interface RunRow {
   completion_tokens: number;
   total_tokens: number;
   step_count: number;
+  rerun_of: string | null;
   created_at: string;
 }
 
@@ -75,6 +76,7 @@ function toRun(row: RunRow): Run {
     completionTokens: row.completion_tokens,
     totalTokens: row.total_tokens,
     stepCount: row.step_count,
+    rerunOf: row.rerun_of,
     createdAt: row.created_at,
   };
 }
@@ -98,8 +100,8 @@ export function createRunService(database: DatabaseSync): RunService {
           `INSERT INTO runs (
             id, workspace_id, status, provider, model, thinking, started_at,
             ended_at, error, prompt_tokens, completion_tokens, total_tokens,
-            step_count, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            step_count, rerun_of, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           run.id,
@@ -115,6 +117,7 @@ export function createRunService(database: DatabaseSync): RunService {
           run.completionTokens,
           run.totalTokens,
           run.stepCount,
+          run.rerunOf,
           run.createdAt,
         );
     },

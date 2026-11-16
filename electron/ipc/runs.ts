@@ -7,6 +7,10 @@ export function registerRunHandlers(useCases: AppUseCases): void {
     useCases.startRun.execute(workspaceId),
   );
 
+  ipcMain.handle("runs:rerun", (_event, runId: string) =>
+    useCases.rerunRun.execute(runId),
+  );
+
   ipcMain.handle("runs:cancel", (_event, runId: string) => {
     useCases.cancelRun.execute(runId);
   });

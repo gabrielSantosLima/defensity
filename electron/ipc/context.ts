@@ -18,6 +18,7 @@ import type { ListHypothesesUseCase } from "../useCases/runs/listHypotheses";
 import type { ListRunEventsUseCase } from "../useCases/runs/listRunEvents";
 import type { ListRunsUseCase } from "../useCases/runs/listRuns";
 import type { ClearRunHistoryUseCase } from "../useCases/runs/clearRunHistory";
+import type { RerunRunUseCase } from "../useCases/runs/rerunRun";
 import type { StartRunUseCase } from "../useCases/runs/startRun";
 
 export interface AppUseCases {
@@ -33,6 +34,7 @@ export interface AppUseCases {
   clearProviderKey: ClearProviderKeyUseCase;
   listModels: ListModelsUseCase;
   startRun: StartRunUseCase;
+  rerunRun: RerunRunUseCase;
   clearRunHistory: ClearRunHistoryUseCase;
   cancelRun: CancelRunUseCase;
   getRun: GetRunUseCase;

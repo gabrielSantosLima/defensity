@@ -271,6 +271,14 @@ export function App() {
               <RunConsole
                 runId={view.id}
                 workspaceName={view.workspaceName}
+                onRerun={(nextRunId) =>
+                  navigate({
+                    name: "run",
+                    id: nextRunId,
+                    workspaceId: view.workspaceId,
+                    workspaceName: view.workspaceName,
+                  })
+                }
                 onBack={() =>
                   navigate({
                     name: "workspace",
