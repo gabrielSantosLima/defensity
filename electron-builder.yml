@@ -1,0 +1,29 @@
+appId: com.defensity.app
+productName: defensity
+copyright: Copyright © 2026 Gabriel Santos Lima
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - dist/main/**/*
+  - dist/renderer/**/*
+  - package.json
+
+asar: true
+
+win:
+  target:
+    - nsis
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
+  maintainer: Gabriel Santos Lima
