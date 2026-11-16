@@ -249,6 +249,17 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
                 </div>
               );
             }
+            if (event.type === "compaction") {
+              return (
+                <div className="tl-usage" key={event.id}>
+                  context compacted ·{" "}
+                  {Number(event.payload.tokensBefore ?? 0).toLocaleString()} →{" "}
+                  {Number(event.payload.tokensAfter ?? 0).toLocaleString()} tokens
+                  {" · "}
+                  {Number(event.payload.removedMessages ?? 0)} messages summarized
+                </div>
+              );
+            }
             if (event.type === "usage") {
               return (
                 <div className="tl-usage" key={event.id}>

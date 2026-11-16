@@ -83,6 +83,7 @@ export type RunEventType =
   | "tool.call"
   | "tool.result"
   | "hypothesis"
+  | "compaction"
   | "usage"
   | "run.completed"
   | "run.failed"

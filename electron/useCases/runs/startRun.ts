@@ -90,7 +90,11 @@ export class StartRunUseCase {
       },
       apiKey,
       baseUrl,
-      limits: { maxSteps: 8, maxToolResultChars: 12000 },
+      limits: {
+        maxSteps: 8,
+        maxToolResultChars: 12000,
+        budget: this.settings.get().compactionBudget,
+      },
     });
 
     return run;

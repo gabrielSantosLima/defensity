@@ -5,6 +5,7 @@ import type {
   AgentStartPayload,
   Usage,
 } from "./types";
+import { compactMessages } from "./context";
 import { createProvider } from "./providers";
 import { createToolset } from "./tools";
 
@@ -91,7 +92,7 @@ export async function runAgent(
     baseUrl: payload.baseUrl,
   });
 
-  const messages: AgentMessage[] = [
+  let messages: AgentMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "user", content: buildTaskPrompt(payload, root) },
   ];
@@ -104,6 +105,17 @@ export async function runAgent(
       throw new Error("cancelled");
     }
     steps = step;
+
+    const compaction = compactMessages(messages, payload.limits.budget);
+    if (compaction) {
+      messages = compaction.messages;
+      emit("compaction", {
+        tokensBefore: compaction.tokensBefore,
+        tokensAfter: compaction.tokensAfter,
+        removedMessages: compaction.removed,
+      });
+    }
+
     emit("step.started", { step });
 
     const result = await provider.chat({
