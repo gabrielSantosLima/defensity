@@ -14,6 +14,8 @@ export interface WorkspaceService {
   get(id: string): Workspace | null;
   insert(workspace: Workspace): void;
   archive(id: string, at: string): void;
+  update(workspace: Workspace): void;
+  delete(id: string): void;
 }
 
 interface WorkspaceRow {
@@ -162,6 +164,59 @@ export function createWorkspaceService(
         database.exec("ROLLBACK");
         throw error;
       }
+    },
+
+    update(workspace) {
+      database.exec("BEGIN");
+      try {
+        database
+          .prepare(
+            `UPDATE workspaces SET
+              name = ?, target_url = ?, target_apk_path = ?, library_artifact_path = ?,
+              library_artifact_kind = ?, source_path = ?, docs_path = ?, provider = ?,
+              model = ?, thinking = ?, authorization_note = ?, updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(
+            workspace.name,
+            workspace.targetUrl,
+            workspace.targetApkPath,
+            workspace.libraryArtifactPath,
+            workspace.libraryArtifactKind,
+            workspace.sourcePath,
+            workspace.docsPath,
+            workspace.provider,
+            workspace.model,
+            workspace.thinking,
+            workspace.authorizationNote,
+            workspace.updatedAt,
+            workspace.id,
+          );
+        database.prepare("DELETE FROM artifacts WHERE workspace_id = ?").run(workspace.id);
+        const insertArtifact = database.prepare(
+          `INSERT INTO artifacts (id, workspace_id, kind, path, hash, size, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        );
+        for (const artifact of workspace.artifacts) {
+          insertArtifact.run(
+            artifact.id,
+            artifact.workspaceId,
+            artifact.kind,
+            artifact.path,
+            artifact.hash,
+            artifact.size,
+            artifact.createdAt,
+          );
+        }
+        database.exec("COMMIT");
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    },
+
+    delete(id) {
+      database.prepare("DELETE FROM workspaces WHERE id = ?").run(id);
     },
 
     archive(id, at) {

@@ -36,10 +36,13 @@ import { ListRunEventsUseCase } from "./useCases/runs/listRunEvents";
 import { ListRunsUseCase } from "./useCases/runs/listRuns";
 import { RecordRunEventUseCase } from "./useCases/runs/recordRunEvent";
 import { RecoverRunsUseCase } from "./useCases/runs/recoverRuns";
+import { ClearRunHistoryUseCase } from "./useCases/runs/clearRunHistory";
 import { StartRunUseCase } from "./useCases/runs/startRun";
 import { GetSettingsUseCase } from "./useCases/settings/getSettings";
 import { SaveEngineSettingsUseCase } from "./useCases/settings/saveEngineSettings";
 import { ArchiveWorkspaceUseCase } from "./useCases/workspaces/archiveWorkspace";
+import { DeleteWorkspaceUseCase } from "./useCases/workspaces/deleteWorkspace";
+import { UpdateWorkspaceUseCase } from "./useCases/workspaces/updateWorkspace";
 import { CreateWorkspaceUseCase } from "./useCases/workspaces/createWorkspace";
 import { GetWorkspaceUseCase } from "./useCases/workspaces/getWorkspace";
 import { ListWorkspacesUseCase } from "./useCases/workspaces/listWorkspaces";
@@ -139,6 +142,13 @@ function compose(userData: string): {
       workspaces,
       clock: systemClock,
     }),
+    updateWorkspace: new UpdateWorkspaceUseCase({
+      workspaces,
+      files: fileService,
+      clock: systemClock,
+      ids: systemIds,
+    }),
+    deleteWorkspace: new DeleteWorkspaceUseCase(workspaces),
     getSettings: new GetSettingsUseCase({
       settings: settingsService,
       secrets,
@@ -162,6 +172,7 @@ function compose(userData: string): {
       ids: systemIds,
     }),
     cancelRun: new CancelRunUseCase({ runs, agent }),
+    clearRunHistory: new ClearRunHistoryUseCase(runs),
     getRun: new GetRunUseCase(runs),
     listRuns: new ListRunsUseCase(runs),
     listRunEvents: new ListRunEventsUseCase(runs),

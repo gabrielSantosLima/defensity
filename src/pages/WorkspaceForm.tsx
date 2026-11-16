@@ -19,25 +19,35 @@ const TYPES: Array<{ id: WorkspaceType; label: string }> = [
 ];
 
 interface WorkspaceFormProps {
+  workspace?: Workspace;
   onCancel: () => void;
   onCreated: (workspace: Workspace) => void;
 }
 
-export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<WorkspaceType>("web");
-  const [targetUrl, setTargetUrl] = useState("");
-  const [apkPath, setApkPath] = useState("");
-  const [libraryPath, setLibraryPath] = useState("");
-  const [libraryKind, setLibraryKind] =
-    useState<LibraryArtifactKind>("lockfile");
-  const [sourcePath, setSourcePath] = useState("");
-  const [docsPath, setDocsPath] = useState("");
-  const [provider, setProvider] = useState<ProviderId | "">("");
-  const [model, setModel] = useState("");
-  const [thinking, setThinking] = useState<ThinkingLevel>("off");
-  const [authorized, setAuthorized] = useState(false);
-  const [note, setNote] = useState("");
+export function WorkspaceForm({
+  workspace,
+  onCancel,
+  onCreated,
+}: WorkspaceFormProps) {
+  const [name, setName] = useState(workspace?.name ?? "");
+  const [type, setType] = useState<WorkspaceType>(workspace?.type ?? "web");
+  const [targetUrl, setTargetUrl] = useState(workspace?.targetUrl ?? "");
+  const [apkPath, setApkPath] = useState(workspace?.targetApkPath ?? "");
+  const [libraryPath, setLibraryPath] = useState(workspace?.libraryArtifactPath ?? "");
+  const [libraryKind, setLibraryKind] = useState<LibraryArtifactKind>(
+    workspace?.libraryArtifactKind ?? "lockfile",
+  );
+  const [sourcePath, setSourcePath] = useState(workspace?.sourcePath ?? "");
+  const [docsPath, setDocsPath] = useState(workspace?.docsPath ?? "");
+  const [provider, setProvider] = useState<ProviderId | "">(
+    workspace?.provider ?? "",
+  );
+  const [model, setModel] = useState(workspace?.model ?? "");
+  const [thinking, setThinking] = useState<ThinkingLevel>(
+    workspace?.thinking ?? "off",
+  );
+  const [authorized, setAuthorized] = useState(Boolean(workspace));
+  const [note, setNote] = useState(workspace?.authorizationNote ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -65,6 +75,8 @@ export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
     return null;
   }
 
+  const workspaceObject = workspace;
+
   async function submit() {
     const problem = validate();
     if (problem) {
@@ -75,7 +87,7 @@ export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
     setSaving(true);
     setError(null);
     try {
-      const workspace = await window.defensity.createWorkspace({
+      const input = {
         name: name.trim(),
         type,
         targetUrl: type === "web" ? targetUrl.trim() : null,
@@ -88,8 +100,11 @@ export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
         model: model.trim() || null,
         thinking,
         authorizationNote: note.trim() || null,
-      });
-      onCreated(workspace);
+      };
+      const saved = workspaceObject
+        ? await window.defensity.updateWorkspace(workspaceObject.id, input)
+        : await window.defensity.createWorkspace(input);
+      onCreated(saved);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -268,7 +283,7 @@ export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
             Cancel
           </Button>
           <Button variant="primary" type="submit" loading={saving}>
-            {saving ? "Creating…" : "Create workspace"}
+            {workspaceObject ? "Save changes" : "Create workspace"}
           </Button>
         </div>
       </form>

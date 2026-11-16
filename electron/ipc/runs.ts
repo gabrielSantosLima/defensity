@@ -19,6 +19,10 @@ export function registerRunHandlers(useCases: AppUseCases): void {
     useCases.listRuns.execute(workspaceId),
   );
 
+  ipcMain.handle("runs:clear", (_event, workspaceId: string) => {
+    useCases.clearRunHistory.execute(workspaceId);
+  });
+
   ipcMain.handle("runs:events", (_event, runId: string) =>
     useCases.listRunEvents.execute(runId),
   );

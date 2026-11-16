@@ -13,6 +13,7 @@ export interface RunService {
   get(id: string): Run | null;
   listByWorkspace(workspaceId: string): Run[];
   listActive(): Run[];
+  deleteByWorkspace(workspaceId: string): void;
   setStatus(
     id: string,
     status: RunStatus,
@@ -132,6 +133,10 @@ export function createRunService(database: DatabaseSync): RunService {
         )
         .all(workspaceId) as unknown as RunRow[];
       return rows.map(toRun);
+    },
+
+    deleteByWorkspace(workspaceId) {
+      database.prepare("DELETE FROM runs WHERE workspace_id = ?").run(workspaceId);
     },
 
     listActive() {

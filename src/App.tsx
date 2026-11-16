@@ -20,6 +20,7 @@ type View =
   | { name: "workspaces" }
   | { name: "new" }
   | { name: "workspace"; id: string; title: string }
+  | { name: "edit"; id: string; title: string }
   | {
       name: "run";
       id: string;
@@ -90,6 +91,7 @@ export function App() {
     view.name === "workspaces" ||
     view.name === "new" ||
     view.name === "workspace" ||
+    view.name === "edit" ||
     view.name === "run";
 
   const title =
@@ -101,7 +103,9 @@ export function App() {
           ? "Settings"
           : view.name === "run"
             ? "Run"
-            : view.title;
+            : view.name === "edit"
+              ? "Edit workspace"
+              : view.title;
 
   return (
     <div className="app-shell">
@@ -256,6 +260,9 @@ export function App() {
                     workspaceId: view.id,
                     workspaceName: view.title,
                   })
+                }
+                onEdit={() =>
+                  navigate({ name: "edit", id: view.id, title: view.title })
                 }
               />
             ) : null}

@@ -24,6 +24,7 @@ interface WorkspaceDetailProps {
   id: string;
   onBack: () => void;
   onArchived: () => void;
+  onEdit: () => void;
   onRun: (run: Run) => void;
   onOpenRun: (runId: string) => void;
 }
@@ -32,6 +33,7 @@ export function WorkspaceDetail({
   id,
   onBack,
   onArchived,
+  onEdit,
   onRun,
   onOpenRun,
 }: WorkspaceDetailProps) {
@@ -69,6 +71,44 @@ export function WorkspaceDetail({
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function clearHistory() {
+    if (!workspace) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Delete all runs and issues for "${workspace.name}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await window.defensity.clearRunHistory(workspace.id);
+      await load();
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  }
+
+  async function removeWorkspace() {
+    if (!workspace) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Delete "${workspace.name}" permanently? Runs, issues and artifacts will be removed.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await window.defensity.deleteWorkspace(workspace.id);
+      onBack();
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  }
 
   async function startAnalysis() {
     if (!workspace) {
@@ -142,8 +182,17 @@ export function WorkspaceDetail({
           <span>updated {formatDate(workspace.updatedAt)}</span>
         </div>
         <div className="page-head-actions">
-          <Button variant="danger" size="sm" onClick={() => void archive()}>
+          <Button variant="secondary" size="sm" onClick={onEdit}>
+            Edit
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => void clearHistory()}>
+            Clear runs
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => void archive()}>
             Archive
+          </Button>
+          <Button variant="danger" size="sm" onClick={() => void removeWorkspace()}>
+            Delete
           </Button>
         </div>
       </div>

@@ -212,6 +212,9 @@ export interface DefensityApi {
   getWorkspace: (id: string) => Promise<Workspace | null>;
   createWorkspace: (input: WorkspaceInput) => Promise<Workspace>;
   archiveWorkspace: (id: string) => Promise<void>;
+  updateWorkspace: (id: string, input: WorkspaceInput) => Promise<Workspace>;
+  deleteWorkspace: (id: string) => Promise<void>;
+  clearRunHistory: (workspaceId: string) => Promise<void>;
   pickPath: (options: PickPathOptions) => Promise<string | null>;
   getSettings: () => Promise<Settings>;
   saveSettings: (

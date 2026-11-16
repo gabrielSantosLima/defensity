@@ -6,6 +6,11 @@ const api: DefensityApi = {
   getWorkspace: (id) => ipcRenderer.invoke("workspaces:get", id),
   createWorkspace: (input) => ipcRenderer.invoke("workspaces:create", input),
   archiveWorkspace: (id) => ipcRenderer.invoke("workspaces:archive", id),
+  updateWorkspace: (id, input) =>
+    ipcRenderer.invoke("workspaces:update", id, input),
+  deleteWorkspace: (id) => ipcRenderer.invoke("workspaces:delete", id),
+  clearRunHistory: (workspaceId) =>
+    ipcRenderer.invoke("runs:clear", workspaceId),
   pickPath: (options) => ipcRenderer.invoke("dialog:pickPath", options),
   getSettings: () => ipcRenderer.invoke("settings:get"),
   saveSettings: (patch) => ipcRenderer.invoke("settings:save", patch),
