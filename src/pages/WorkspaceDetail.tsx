@@ -177,7 +177,22 @@ export function WorkspaceDetail({
       <div className="page-head">
         <div className="detail-meta">
           <span className="chip chip--accent">{TYPE_LABEL[workspace.type]}</span>
-          <span className="cell-mono">{target ?? "—"}</span>
+          {workspace.type === "web" && workspace.targetUrl ? (
+            <a
+              className="link cell-mono"
+              href={workspace.targetUrl}
+              onClick={(event) => {
+                event.preventDefault();
+                void window.defensity.openExternal(
+                  workspace.targetUrl as string,
+                );
+              }}
+            >
+              {workspace.targetUrl}
+            </a>
+          ) : (
+            <span className="cell-mono">{target ?? "—"}</span>
+          )}
           <span>·</span>
           <span>updated {formatDate(workspace.updatedAt)}</span>
         </div>
@@ -205,7 +220,24 @@ export function WorkspaceDetail({
             <dt>Type</dt>
             <dd>{TYPE_LABEL[workspace.type]}</dd>
             <dt>Target</dt>
-            <dd className="mono">{target ?? "—"}</dd>
+            <dd className="mono">
+              {workspace.type === "web" && workspace.targetUrl ? (
+                <a
+                  className="link"
+                  href={workspace.targetUrl}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void window.defensity.openExternal(
+                      workspace.targetUrl as string,
+                    );
+                  }}
+                >
+                  {workspace.targetUrl}
+                </a>
+              ) : (
+                (target ?? "—")
+              )}
+            </dd>
             {workspace.type === "library" ? (
               <>
                 <dt>Format</dt>

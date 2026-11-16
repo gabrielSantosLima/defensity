@@ -228,6 +228,7 @@ export interface DefensityApi {
   startRun: (workspaceId: string) => Promise<Run>;
   rerunRun: (runId: string) => Promise<Run>;
   zoomBy: (delta: number) => Promise<void>;
+  openExternal: (url: string) => Promise<void>;
   cancelRun: (runId: string) => Promise<void>;
   getRun: (runId: string) => Promise<Run | null>;
   listRuns: (workspaceId: string) => Promise<Run[]>;

@@ -94,7 +94,25 @@ export function WorkspacesPage({
                     <td>
                       <span className="chip">{TYPE_LABEL[workspace.type]}</span>
                     </td>
-                    <td className="cell-mono">{targetLabel(workspace)}</td>
+                    <td className="cell-mono">
+                      {workspace.type === "web" && workspace.targetUrl ? (
+                        <a
+                          className="link"
+                          href={workspace.targetUrl}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void window.defensity.openExternal(
+                              workspace.targetUrl as string,
+                            );
+                          }}
+                        >
+                          {workspace.targetUrl}
+                        </a>
+                      ) : (
+                        targetLabel(workspace)
+                      )}
+                    </td>
                     <td className="cell-mono">{workspace.artifacts.length}</td>
                     <td className="cell-muted">
                       {formatDate(workspace.updatedAt)}
