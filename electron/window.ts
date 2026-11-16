@@ -9,6 +9,7 @@ export function createMainWindow(devServerUrl?: string): BrowserWindow {
     minHeight: 640,
     show: false,
     backgroundColor: "#070a0c",
+    icon: path.join(__dirname, "../../../build/icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),

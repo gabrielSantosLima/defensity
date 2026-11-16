@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="defensity">
+  <path fill="#111827" fill-rule="evenodd" d="M10 10h44v44H10zM36 36h18v18H36z"/>
+  <rect x="39" y="39" width="12" height="12" fill="#3F6B00"/>
+</svg>

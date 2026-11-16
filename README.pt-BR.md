@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo/logo-dark.svg">
-  <img src="assets/logo/logo.svg" alt="defensity" width="280">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo/lockup-dark.svg">
+  <img src="assets/logo/lockup.svg" alt="defensity" width="300">
 </picture>
 
 Uma automação baseada em agentes para detectar vulnerabilidades em qualquer biblioteca ou aplicação.
