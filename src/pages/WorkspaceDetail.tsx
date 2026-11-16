@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Artifact, Run, Workspace } from "../../shared/types";
+import type { Artifact, Finding, Run, Workspace } from "../../shared/types";
 import { Button } from "../components/Button";
 import { Panel } from "../components/ui";
 import { errorMessage, formatBytes, formatDate, shortHash } from "../lib/format";
@@ -25,6 +25,7 @@ interface WorkspaceDetailProps {
   onBack: () => void;
   onArchived: () => void;
   onRun: (run: Run) => void;
+  onOpenRun: (runId: string) => void;
 }
 
 export function WorkspaceDetail({
@@ -32,9 +33,11 @@ export function WorkspaceDetail({
   onBack,
   onArchived,
   onRun,
+  onOpenRun,
 }: WorkspaceDetailProps) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [issues, setIssues] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,17 @@ export function WorkspaceDetail({
     try {
       const found = await window.defensity.getWorkspace(id);
       setWorkspace(found);
-      setRuns(found ? await window.defensity.listRuns(id) : []);
+      if (found) {
+        const [runList, issueList] = await Promise.all([
+          window.defensity.listRuns(id),
+          window.defensity.listWorkspaceIssues(id),
+        ]);
+        setRuns(runList);
+        setIssues(issueList);
+      } else {
+        setRuns([]);
+        setIssues([]);
+      }
       setError(found ? null : "This workspace no longer exists.");
     } catch (caught) {
       setError(errorMessage(caught));
@@ -245,6 +258,50 @@ export function WorkspaceDetail({
           </div>
           {error ? <div className="alert">{error}</div> : null}
         </div>
+      </Panel>
+
+      <Panel title="Issues" meta={`${issues.length} registered`} flush>
+        {issues.length === 0 ? (
+          <div className="panel-body">No validated issues yet.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: 100 }}>Severity</th>
+                  <th>Issue</th>
+                  <th style={{ width: 110 }}>Validator</th>
+                  <th style={{ width: 175 }}>Found</th>
+                </tr>
+              </thead>
+              <tbody>
+                {issues.map((issue) => (
+                  <tr
+                    key={issue.id}
+                    className="clickable"
+                    tabIndex={0}
+                    onClick={() => onOpenRun(issue.runId)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onOpenRun(issue.runId);
+                      }
+                    }}
+                  >
+                    <td>
+                      <span className={`chip issue-sev--${issue.severity}`}>
+                        {issue.severity}
+                      </span>
+                    </td>
+                    <td>{issue.title}</td>
+                    <td className="cell-muted">{issue.validator}</td>
+                    <td className="cell-muted">{formatDate(issue.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Panel>
 
       <Panel title="Runs" meta={`${runs.length} recent`} flush>

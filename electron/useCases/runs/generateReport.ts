@@ -76,12 +76,12 @@ export class GenerateReportUseCase {
         ? `Authorization note: ${workspace.authorizationNote}`
         : "No authorization note was recorded.",
       "",
-      "## Findings",
+      "## Issues",
       "",
     ];
 
     if (findings.length === 0) {
-      lines.push("No validated findings were recorded.");
+      lines.push("No validated issues were recorded.");
     } else {
       for (const finding of findings) {
         lines.push(
@@ -114,7 +114,7 @@ export class GenerateReportUseCase {
       "",
       `- Steps: ${run.stepCount}`,
       `- Tokens: ${run.totalTokens.toLocaleString()}`,
-      `- Findings: ${findings.length}`,
+      `- Issues: ${findings.length}`,
       `- Hypotheses: ${hypotheses.length}`,
       "",
     );

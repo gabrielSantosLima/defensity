@@ -31,6 +31,10 @@ export function registerRunHandlers(useCases: AppUseCases): void {
     useCases.listFindings.execute(runId),
   );
 
+  ipcMain.handle("issues:list", (_event, workspaceId: string) =>
+    useCases.listWorkspaceIssues.execute(workspaceId),
+  );
+
   ipcMain.handle("reports:generate", (_event, runId: string) =>
     useCases.generateReport.execute(runId),
   );

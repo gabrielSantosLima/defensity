@@ -1173,6 +1173,83 @@ tbody tr.clickable:focus-visible {
   word-break: break-word;
 }
 
+
+.exec {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.exec-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 11px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.exec-summary::-webkit-details-marker {
+  display: none;
+}
+
+.exec-summary::before {
+  content: "▸";
+  color: var(--text-faint);
+  font-size: 9px;
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.exec[open] .exec-summary::before {
+  transform: rotate(90deg);
+}
+
+.exec-title {
+  color: var(--text-muted);
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.exec-names {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-faint);
+  font: 500 10.5px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exec-body {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--border);
+}
+
+
+.issue-sev--critical {
+  color: var(--critical);
+  border-color: color-mix(in srgb, var(--critical) 50%, transparent);
+}
+
+.issue-sev--high {
+  color: var(--high);
+  border-color: color-mix(in srgb, var(--high) 50%, transparent);
+}
+
+.issue-sev--medium {
+  color: var(--medium);
+  border-color: color-mix(in srgb, var(--medium) 50%, transparent);
+}
+
+.issue-sev--low {
+  color: var(--low);
+  border-color: color-mix(in srgb, var(--low) 50%, transparent);
+}
+
 @media (max-width: 900px) {
   .app-body {
     grid-template-columns: 1fr;

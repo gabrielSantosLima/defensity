@@ -227,6 +227,7 @@ export interface DefensityApi {
   listRunEvents: (runId: string) => Promise<RunEvent[]>;
   listHypotheses: (runId: string) => Promise<Hypothesis[]>;
   listFindings: (runId: string) => Promise<Finding[]>;
+  listWorkspaceIssues: (workspaceId: string) => Promise<Finding[]>;
   generateReport: (runId: string) => Promise<string>;
   saveReport: (runId: string) => Promise<string | null>;
   onRunUpdate: (listener: (update: RunUpdate) => void) => () => void;

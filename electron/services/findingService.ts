@@ -4,6 +4,7 @@ import type { Finding, Severity } from "../../shared/types";
 export interface FindingService {
   insert(finding: Finding): void;
   listByRun(runId: string): Finding[];
+  listByWorkspace(workspaceId: string): Finding[];
 }
 
 interface FindingRow {
@@ -41,6 +42,31 @@ export function createFindingService(database: DatabaseSync): FindingService {
           finding.status,
           finding.createdAt,
         );
+    },
+
+    listByWorkspace(workspaceId) {
+      const rows = database
+        .prepare(
+          `SELECT f.* FROM findings f
+           JOIN runs r ON r.id = f.run_id
+           WHERE r.workspace_id = ?
+           ORDER BY CASE f.severity
+             WHEN 'critical' THEN 0 WHEN 'high' THEN 1
+             WHEN 'medium' THEN 2 ELSE 3 END, f.created_at DESC`,
+        )
+        .all(workspaceId) as unknown as FindingRow[];
+      return rows.map((row) => ({
+        id: row.id,
+        runId: row.run_id,
+        hypothesisId: row.hypothesis_id,
+        title: row.title,
+        severity: row.severity,
+        class: row.class,
+        evidence: row.evidence,
+        validator: row.validator,
+        status: row.status,
+        createdAt: row.created_at,
+      }));
     },
 
     listByRun(runId) {

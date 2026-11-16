@@ -188,6 +188,14 @@ export function App() {
                     workspaceName: view.title,
                   })
                 }
+                onOpenRun={(runId: string) =>
+                  setView({
+                    name: "run",
+                    id: runId,
+                    workspaceId: view.id,
+                    workspaceName: view.title,
+                  })
+                }
               />
             ) : null}
 

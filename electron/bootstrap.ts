@@ -23,6 +23,7 @@ import { FinishRunUseCase } from "./useCases/runs/finishRun";
 import { GetRunUseCase } from "./useCases/runs/getRun";
 import { GenerateReportUseCase } from "./useCases/runs/generateReport";
 import { ListFindingsUseCase } from "./useCases/runs/listFindings";
+import { ListWorkspaceIssuesUseCase } from "./useCases/runs/listWorkspaceIssues";
 import { ListHypothesesUseCase } from "./useCases/runs/listHypotheses";
 import { ListRunEventsUseCase } from "./useCases/runs/listRunEvents";
 import { ListRunsUseCase } from "./useCases/runs/listRuns";
@@ -136,6 +137,7 @@ function compose(userData: string): {
     listRunEvents: new ListRunEventsUseCase(runs),
     listHypotheses: new ListHypothesesUseCase(hypotheses),
     listFindings: new ListFindingsUseCase(findings),
+    listWorkspaceIssues: new ListWorkspaceIssuesUseCase(findings),
     generateReport: new GenerateReportUseCase({
       runs,
       workspaces,

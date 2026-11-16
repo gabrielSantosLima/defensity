@@ -15,7 +15,10 @@ function elapsed(run: Run, now: number): string {
     return "—";
   }
   const end = run.endedAt ? new Date(run.endedAt).getTime() : now;
-  const seconds = Math.max(0, Math.round((end - new Date(run.startedAt).getTime()) / 1000));
+  const seconds = Math.max(
+    0,
+    Math.round((end - new Date(run.startedAt).getTime()) / 1000),
+  );
   if (seconds < 60) {
     return `${seconds}s`;
   }
@@ -24,6 +27,31 @@ function elapsed(run: Run, now: number): string {
 
 function isEvent(update: RunUpdate): update is RunEvent {
   return "id" in update;
+}
+
+type Block =
+  | { type: "group"; key: string; events: RunEvent[] }
+  | { type: "event"; event: RunEvent };
+
+const EXEC_TYPES = new Set(["tool.call", "tool.result"]);
+
+function groupEvents(events: RunEvent[]): Block[] {
+  const blocks: Block[] = [];
+  let current: Extract<Block, { type: "group" }> | null = null;
+
+  for (const event of events) {
+    if (EXEC_TYPES.has(event.type)) {
+      if (!current) {
+        current = { type: "group", key: event.id, events: [] };
+        blocks.push(current);
+      }
+      current.events.push(event);
+      continue;
+    }
+    current = null;
+    blocks.push({ type: "event", event });
+  }
+  return blocks;
 }
 
 interface RunConsoleProps {
@@ -130,6 +158,124 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
     }
   }
 
+  function renderEvent(event: RunEvent) {
+    if (event.type === "step.started") {
+      return (
+        <div className="tl-step" key={event.id}>
+          step {String(event.payload.step ?? "?")}
+        </div>
+      );
+    }
+    if (event.type === "tool.call") {
+      return (
+        <div className="tl-tool" key={event.id}>
+          <div className="tl-tool-head">
+            <span className="tl-tool-name">
+              {String(event.payload.name ?? "tool")}
+            </span>
+            <span className="tl-tool-args">
+              {JSON.stringify(event.payload.arguments ?? {})}
+            </span>
+          </div>
+        </div>
+      );
+    }
+    if (event.type === "tool.result") {
+      const ok = event.payload.ok !== false;
+      return (
+        <div
+          className={`tl-result${ok ? "" : " tl-result--error"}`}
+          key={event.id}
+        >
+          <span className="tl-result-meta">
+            {ok ? "result" : "error"} · {String(event.payload.chars ?? 0)} chars
+          </span>
+          <pre className="tl-pre">{String(event.payload.preview ?? "")}</pre>
+        </div>
+      );
+    }
+    if (event.type === "assistant.message") {
+      return (
+        <div className="tl-text" key={event.id}>
+          {String(event.payload.text ?? "")}
+        </div>
+      );
+    }
+    if (event.type === "finding") {
+      const severity = String(event.payload.severity ?? "low");
+      return (
+        <div className={`tl-finding tl-finding--${severity}`} key={event.id}>
+          <div className="tl-finding-head">
+            <span className="chip">{severity}</span>
+            <span className="tl-finding-validator">
+              via {String(event.payload.validator ?? "unknown")}
+            </span>
+          </div>
+          <p className="tl-finding-title">
+            {String(event.payload.title ?? "")}
+          </p>
+          <pre className="tl-pre">{String(event.payload.evidence ?? "")}</pre>
+        </div>
+      );
+    }
+    if (event.type === "hypothesis") {
+      const impact = Number(event.payload.impact ?? 0);
+      const plausibility = Number(event.payload.plausibility ?? 0);
+      const evidence = String(event.payload.evidence ?? "");
+      const proposedTest = event.payload.proposedTest
+        ? String(event.payload.proposedTest)
+        : null;
+      return (
+        <div className="tl-hypothesis" key={event.id}>
+          <div className="tl-hyp-head">
+            <span className="chip chip--accent">
+              {String(event.payload.class ?? "other")}
+            </span>
+            <span className="tl-hyp-score">{impact * plausibility}/25</span>
+          </div>
+          <p className="tl-hyp-statement">
+            {String(event.payload.statement ?? "")}
+          </p>
+          <p className="tl-hyp-rationale">
+            {String(event.payload.rationale ?? "")}
+          </p>
+          {evidence ? <pre className="tl-pre">{evidence}</pre> : null}
+          {proposedTest ? (
+            <p className="tl-hyp-test">test: {proposedTest}</p>
+          ) : null}
+          <span className="tl-hyp-rank">
+            impact {impact} · plausibility {plausibility}
+          </span>
+        </div>
+      );
+    }
+    if (event.type === "compaction") {
+      return (
+        <div className="tl-usage" key={event.id}>
+          context compacted ·{" "}
+          {Number(event.payload.tokensBefore ?? 0).toLocaleString()} →{" "}
+          {Number(event.payload.tokensAfter ?? 0).toLocaleString()} tokens ·{" "}
+          {Number(event.payload.removedMessages ?? 0)} messages summarized
+        </div>
+      );
+    }
+    if (event.type === "usage") {
+      return (
+        <div className="tl-usage" key={event.id}>
+          +{Number(event.payload.totalTokens ?? 0)} tokens (
+          {Number(event.payload.promptTokens ?? 0)} in /{" "}
+          {Number(event.payload.completionTokens ?? 0)} out)
+        </div>
+      );
+    }
+    return (
+      <div className="tl-status" key={event.id}>
+        {event.type.replace("run.", "run ")}
+        {event.payload.error ? ` — ${String(event.payload.error)}` : ""}
+      </div>
+    );
+  }
+
   if (!run) {
     return (
       <div className="page">
@@ -139,6 +285,19 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
   }
 
   const running = run.status === "running";
+  const blocks = groupEvents(
+    events.filter(
+      (event) =>
+        !(
+          (event.type === "tool.call" || event.type === "tool.result") &&
+          (event.payload.name === "hypothesis_record" ||
+            event.payload.name === "finding_record")
+        ),
+    ),
+  );
+  const lastGroup = [...blocks]
+    .reverse()
+    .find((block) => block.type === "group");
 
   return (
     <div className="page">
@@ -156,7 +315,7 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           <span>{run.totalTokens.toLocaleString()} tokens</span>
           <span>·</span>
           <span>
-            {findings.length} finding{findings.length === 1 ? "" : "s"}
+            {findings.length} issue{findings.length === 1 ? "" : "s"}
           </span>
           <span>·</span>
           <span>
@@ -181,154 +340,39 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
 
       {error ? <div className="alert">{error}</div> : null}
 
-      <Panel
-        title="Timeline"
-        meta={`${run.stepCount || 0} step${run.stepCount === 1 ? "" : "s"}`}
-      >
+      <Panel title="Timeline" meta={`${run.stepCount || 0} steps`}>
         <div className="timeline">
           {events.length === 0 && !live ? (
-            <p className="hint">
-              Waiting for the agent to report its first step…
-            </p>
+            <p className="hint">Waiting for the agent to report its first step…</p>
           ) : null}
 
-          {events
-            .filter(
-              (event) =>
-                !(
-                  (event.type === "tool.call" || event.type === "tool.result") &&
-                  (event.payload.name === "hypothesis_record" ||
-                    event.payload.name === "finding_record")
-                ),
-            )
-            .map((event) => {
-            if (event.type === "step.started") {
-              return (
-                <div className="tl-step" key={event.id}>
-                  step {String(event.payload.step ?? "?")}
-                </div>
-              );
+          {blocks.map((block) => {
+            if (block.type === "event") {
+              return renderEvent(block.event);
             }
-            if (event.type === "tool.call") {
-              return (
-                <div className="tl-tool" key={event.id}>
-                  <div className="tl-tool-head">
-                    <span className="tl-tool-name">
-                      {String(event.payload.name ?? "tool")}
-                    </span>
-                    <span className="tl-tool-args">
-                      {JSON.stringify(event.payload.arguments ?? {})}
-                    </span>
-                  </div>
-                </div>
-              );
-            }
-            if (event.type === "tool.result") {
-              const ok = event.payload.ok !== false;
-              return (
-                <div
-                  className={`tl-result${ok ? "" : " tl-result--error"}`}
-                  key={event.id}
-                >
-                  <span className="tl-result-meta">
-                    {ok ? "result" : "error"} ·{" "}
-                    {String(event.payload.chars ?? 0)} chars
-                  </span>
-                  <pre className="tl-pre">
-                    {String(event.payload.preview ?? "")}
-                  </pre>
-                </div>
-              );
-            }
-            if (event.type === "assistant.message") {
-              return (
-                <div className="tl-text" key={event.id}>
-                  {String(event.payload.text ?? "")}
-                </div>
-              );
-            }
-            if (event.type === "finding") {
-              const severity = String(event.payload.severity ?? "low");
-              return (
-                <div
-                  className={`tl-finding tl-finding--${severity}`}
-                  key={event.id}
-                >
-                  <div className="tl-finding-head">
-                    <span className="chip">{severity}</span>
-                    <span className="tl-finding-validator">
-                      via {String(event.payload.validator ?? "unknown")}
-                    </span>
-                  </div>
-                  <p className="tl-finding-title">
-                    {String(event.payload.title ?? "")}
-                  </p>
-                  <pre className="tl-pre">
-                    {String(event.payload.evidence ?? "")}
-                  </pre>
-                </div>
-              );
-            }
-            if (event.type === "hypothesis") {
-              const impact = Number(event.payload.impact ?? 0);
-              const plausibility = Number(event.payload.plausibility ?? 0);
-              const evidence = String(event.payload.evidence ?? "");
-              const proposedTest = event.payload.proposedTest
-                ? String(event.payload.proposedTest)
-                : null;
-              return (
-                <div className="tl-hypothesis" key={event.id}>
-                  <div className="tl-hyp-head">
-                    <span className="chip chip--accent">
-                      {String(event.payload.class ?? "other")}
-                    </span>
-                    <span className="tl-hyp-score">
-                      {impact * plausibility}/25
-                    </span>
-                  </div>
-                  <p className="tl-hyp-statement">
-                    {String(event.payload.statement ?? "")}
-                  </p>
-                  <p className="tl-hyp-rationale">
-                    {String(event.payload.rationale ?? "")}
-                  </p>
-                  {evidence ? <pre className="tl-pre">{evidence}</pre> : null}
-                  {proposedTest ? (
-                    <p className="tl-hyp-test">test: {proposedTest}</p>
-                  ) : null}
-                  <span className="tl-hyp-rank">
-                    impact {impact} · plausibility {plausibility}
-                  </span>
-                </div>
-              );
-            }
-            if (event.type === "compaction") {
-              return (
-                <div className="tl-usage" key={event.id}>
-                  context compacted ·{" "}
-                  {Number(event.payload.tokensBefore ?? 0).toLocaleString()} →{" "}
-                  {Number(event.payload.tokensAfter ?? 0).toLocaleString()} tokens
-                  {" · "}
-                  {Number(event.payload.removedMessages ?? 0)} messages summarized
-                </div>
-              );
-            }
-            if (event.type === "usage") {
-              return (
-                <div className="tl-usage" key={event.id}>
-                  +{Number(event.payload.totalTokens ?? 0)} tokens (
-                  {Number(event.payload.promptTokens ?? 0)} in /{" "}
-                  {Number(event.payload.completionTokens ?? 0)} out)
-                </div>
-              );
-            }
-            return (
-              <div className="tl-status" key={event.id}>
-                {event.type.replace("run.", "run ")}
-                {event.payload.error ? ` — ${String(event.payload.error)}` : ""}
-              </div>
+
+            const calls = block.events.filter(
+              (event) => event.type === "tool.call",
             );
-            })}
+            const names = [
+              ...new Set(calls.map((event) => String(event.payload.name))),
+            ];
+            const open = running && block === lastGroup;
+
+            return (
+              <details className="exec" key={block.key} open={open}>
+                <summary className="exec-summary">
+                  <span className="exec-title">
+                    {calls.length} tool call{calls.length === 1 ? "" : "s"}
+                  </span>
+                  <span className="exec-names">{names.join(", ")}</span>
+                </summary>
+                <div className="exec-body">
+                  {block.events.map((event) => renderEvent(event))}
+                </div>
+              </details>
+            );
+          })}
 
           {live ? (
             <div className="tl-text tl-text--live">
@@ -337,9 +381,7 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
             </div>
           ) : null}
 
-          {running ? (
-            <div className="tl-usage">agent working…</div>
-          ) : null}
+          {running ? <div className="tl-usage">agent working…</div> : null}
           <div ref={endRef} />
         </div>
       </Panel>
@@ -356,11 +398,7 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           <div className="modal report-modal" role="dialog" aria-modal="true">
             <header className="modal-head">
               <span>Report</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setReport(null)}
-              >
+              <Button size="sm" variant="ghost" onClick={() => setReport(null)}>
                 Close
               </Button>
             </header>

@@ -11,6 +11,7 @@ import type { CancelRunUseCase } from "../useCases/runs/cancelRun";
 import type { GetRunUseCase } from "../useCases/runs/getRun";
 import type { GenerateReportUseCase } from "../useCases/runs/generateReport";
 import type { ListFindingsUseCase } from "../useCases/runs/listFindings";
+import type { ListWorkspaceIssuesUseCase } from "../useCases/runs/listWorkspaceIssues";
 import type { ListHypothesesUseCase } from "../useCases/runs/listHypotheses";
 import type { ListRunEventsUseCase } from "../useCases/runs/listRunEvents";
 import type { ListRunsUseCase } from "../useCases/runs/listRuns";
@@ -33,5 +34,6 @@ export interface AppUseCases {
   listRunEvents: ListRunEventsUseCase;
   listHypotheses: ListHypothesesUseCase;
   listFindings: ListFindingsUseCase;
+  listWorkspaceIssues: ListWorkspaceIssuesUseCase;
   generateReport: GenerateReportUseCase;
 }
