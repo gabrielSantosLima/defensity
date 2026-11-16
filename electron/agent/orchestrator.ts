@@ -181,7 +181,7 @@ export async function runAgent(
       emit("tool.result", {
         name: call.name,
         ok: outcome.ok,
-        preview: outcome.content.slice(0, 400),
+        preview: outcome.content.slice(0, 12000),
         chars: outcome.content.length,
       });
 
