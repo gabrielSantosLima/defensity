@@ -67,7 +67,7 @@ export function WorkspacesPage({
                   <th style={{ width: 90 }}>Type</th>
                   <th>Target</th>
                   <th style={{ width: 90 }}>Artifacts</th>
-                  <th style={{ width: 160 }}>Updated</th>
+                  <th style={{ width: 185 }}>Updated</th>
                 </tr>
               </thead>
               <tbody>

@@ -9,36 +9,36 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
-  --text-display-size: 38px;
-  --text-display-line: 40px;
+  --text-display-size: 40px;
+  --text-display-line: 42px;
   --text-display-weight: 700;
   --text-display-tracking: -0.025em;
 
-  --text-h1-size: 24px;
-  --text-h1-line: 30px;
+  --text-h1-size: 25px;
+  --text-h1-line: 31px;
   --text-h1-weight: 650;
   --text-h1-tracking: -0.02em;
 
-  --text-h2-size: 18px;
-  --text-h2-line: 24px;
+  --text-h2-size: 19px;
+  --text-h2-line: 25px;
   --text-h2-weight: 600;
   --text-h2-tracking: -0.012em;
 
-  --text-body-size: 13.5px;
-  --text-body-line: 23px;
+  --text-body-size: 14px;
+  --text-body-line: 22px;
   --text-body-weight: 400;
 
-  --text-small-size: 11.5px;
-  --text-small-line: 18px;
+  --text-small-size: 13px;
+  --text-small-line: 20px;
   --text-small-weight: 400;
 
-  --text-label-size: 9.5px;
-  --text-label-line: 14px;
+  --text-label-size: 10.5px;
+  --text-label-line: 15px;
   --text-label-weight: 600;
   --text-label-tracking: 0.2em;
 
-  --text-data-size: 12px;
-  --text-data-line: 19px;
+  --text-data-size: 13px;
+  --text-data-line: 20px;
   --text-data-weight: 500;
 
   /* Spacing --------------------------------------------------------------- */

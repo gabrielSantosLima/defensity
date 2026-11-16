@@ -1,7 +1,4 @@
-import type {
-  ArtifactKind,
-  WorkspaceInput,
-} from "../../../shared/types";
+import type { ArtifactKind, WorkspaceInput } from "../../shared/types";
 
 export interface PlannedArtifact {
   kind: ArtifactKind;

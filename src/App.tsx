@@ -2,18 +2,25 @@ import { useCallback, useEffect, useState } from "react";
 import { LayoutGrid, Settings as SettingsIcon } from "lucide-react";
 import logo from "../assets/logo/logo-dark.svg";
 import version from "../package.json";
-import type { Workspace } from "../shared/types";
+import type { Run, Workspace } from "../shared/types";
 import { Button } from "./components/Button";
 import { errorMessage } from "./lib/format";
 import { SettingsPage } from "./pages/SettingsPage";
 import { WorkspaceDetail } from "./pages/WorkspaceDetail";
 import { WorkspaceForm } from "./pages/WorkspaceForm";
+import { RunConsole } from "./pages/RunConsole";
 import { WorkspacesPage } from "./pages/WorkspacesPage";
 
 type View =
   | { name: "workspaces" }
   | { name: "new" }
   | { name: "workspace"; id: string; title: string }
+  | {
+      name: "run";
+      id: string;
+      workspaceId: string;
+      workspaceName: string;
+    }
   | { name: "settings" };
 
 export function App() {
@@ -41,7 +48,8 @@ export function App() {
   const inWorkspaceSection =
     view.name === "workspaces" ||
     view.name === "new" ||
-    view.name === "workspace";
+    view.name === "workspace" ||
+    view.name === "run";
 
   const title =
     view.name === "workspaces"
@@ -50,7 +58,9 @@ export function App() {
         ? "New workspace"
         : view.name === "settings"
           ? "Settings"
-          : view.title;
+          : view.name === "run"
+            ? "Run"
+            : view.title;
 
   return (
     <div className="app-shell">
@@ -170,6 +180,27 @@ export function App() {
                   void refresh();
                   setView({ name: "workspaces" });
                 }}
+                onRun={(run: Run) =>
+                  setView({
+                    name: "run",
+                    id: run.id,
+                    workspaceId: run.workspaceId,
+                    workspaceName: view.title,
+                  })
+                }
+              />
+            ) : null}
+
+            {view.name === "run" ? (
+              <RunConsole
+                runId={view.id}
+                onBack={() =>
+                  setView({
+                    name: "workspace",
+                    id: view.workspaceId,
+                    title: view.workspaceName,
+                  })
+                }
               />
             ) : null}
 

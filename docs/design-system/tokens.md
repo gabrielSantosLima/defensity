@@ -74,13 +74,16 @@ Fallbacks exist only to avoid a blank frame during load: keep the stack from
 
 | Role | Font | Size | Line | Weight | Tracking | Case |
 | --- | --- | --- | --- | --- | --- | --- |
-| Display | sans | 38 | 40 | 700 | −0.025em | Sentence |
-| Heading 1 | sans | 24 | 30 | 650 | −0.02em | Sentence |
-| Heading 2 | sans | 18 | 24 | 600 | −0.012em | Sentence |
-| Body | sans | 13.5 | 23 | 400 | 0 | Sentence |
-| Small | sans | 11.5 | 18 | 400 | 0 | Sentence |
-| Label | mono | 9.5 | 14 | 600 | 0.2em | UPPERCASE |
-| Data | mono | 12 | 19 | 500 | 0 | Sentence |
+| Display | sans | 40 | 42 | 700 | −0.025em | Sentence |
+| Heading 1 | sans | 25 | 31 | 650 | −0.02em | Sentence |
+| Heading 2 | sans | 19 | 25 | 600 | −0.012em | Sentence |
+| Body | sans | 14 | 22 | 400 | 0 | Sentence |
+| Small | sans | 13 | 20 | 400 | 0 | Sentence |
+| Label | mono | 10.5 | 15 | 600 | 0.2em | UPPERCASE |
+| Data | mono | 13 | 20 | 500 | 0 | Sentence |
+
+The base follows the OpenCode scale: small 13, base 14, large 16. Labels and
+data sit between small and base because they are compared, not read in prose.
 
 ### Typography rules
 

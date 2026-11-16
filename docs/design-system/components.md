@@ -24,7 +24,7 @@ in this file before building it.
 disabled. Focus always uses the global 1 px accent outline. Disabled is
 `opacity: 0.4` with `cursor: not-allowed` and no hover change.
 
-**Labels.** Buttons, tabs and segments use the Label role: mono, 9.5–11 px,
+**Labels.** Buttons, tabs and segments use the Label role: mono, 10.5–12 px,
 uppercase, tracking 0.08–0.1em. The uppercase comes from CSS, never from the
 string.
 
@@ -46,7 +46,7 @@ Anatomy: optional icon, label, no border unless outlined.
 | --- | --- | --- |
 | Height | 30 px | 24 px |
 | Horizontal padding | 12 px | 8 px |
-| Label | 11 px / 600 / 0.08em | 10 px / 600 / 0.08em |
+| Label | 12 px / 600 / 0.08em | 11 px / 600 / 0.08em |
 | Radius | `--r-sm` | `--r-sm` |
 | Gap icon–label | `--s1` | `--s1` |
 
@@ -82,7 +82,7 @@ Secondary. Always carries an accessible name through `aria-label` and a tooltip.
 | Background | `--bg` |
 | Border | 1 px `--border-strong` |
 | Radius | `--r-sm` |
-| Text | `--font-mono`, 12 px |
+| Text | `--font-mono`, 13 px |
 | Placeholder | `--text-faint` |
 | Focus | 1 px `--accent` outline, offset 0 |
 
@@ -123,7 +123,7 @@ checkbox.
 ### Segmented control
 
 Container with 1 px `--border-strong` and `--r-sm`, no gap. Segments are 26 px
-tall with 10 px uppercase labels. Active segment is filled with `--accent` and
+tall with 11 px uppercase labels. Active segment is filled with `--accent` and
 `--on-accent`, with `1px` separators between segments. Used for two to four
 mutually exclusive modes; more than four becomes a select.
 
@@ -140,12 +140,12 @@ without a box.
 
 - Width 216 px, fixed. Hidden below 900 px of window width.
 - Background `--surface`, 1 px `--border` on the right.
-- Section label: 9 px, uppercase, 0.18em, `--text-faint`, 8 px horizontal inset.
-- Item: 30 px tall, `--r-sm`, 15 px icon, 12.5 px label (Inter).
+- Section label: 10 px, uppercase, 0.18em, `--text-faint`, 8 px horizontal inset.
+- Item: 30 px tall, `--r-sm`, 15 px icon, 13.5 px label (Inter).
 - Hover: `--surface-2`, `--text`.
 - Active: 2 px `--accent` left marker, `--surface-2` background, `--accent`
   label, weight 600.
-- Counts on the right use mono 9.5 px and inherit the item color.
+- Counts on the right use mono 10.5 px and inherit the item color.
 
 ### Title bar
 
@@ -155,7 +155,7 @@ wide each, 11 px glyphs, hover `--surface-3`, close hover `--critical`.
 
 ### Status bar
 
-24 px tall, `--surface-2`, 1 px top border, mono 9.5 px `--text-faint`. Left:
+24 px tall, `--surface-2`, 1 px top border, mono 10.5 px `--text-faint`. Left:
 status dot (5 px square, `--accent` when healthy) and current operation. Right:
 branch, revision and time. Always present at the bottom of the window.
 
@@ -167,7 +167,7 @@ The most important component of the product.
 
 | Property | Value |
 | --- | --- |
-| Header | mono 9.5 px / 600 / 0.14em, uppercase, `--text-faint`, `--surface-2` |
+| Header | mono 10.5 px / 600 / 0.14em, uppercase, `--text-faint`, `--surface-2` |
 | Cell padding | 9 px vertical, 12 px horizontal |
 | Cell border | 1 px `--border` on the right and bottom |
 | Row hover | `--surface-2` |
@@ -193,8 +193,8 @@ padding follows content type: `--s3` for tables (which own their padding),
 
 ### KPI
 
-Padding `--s3`. Label: mono 9 px, uppercase, 0.14em. Value: 24 px / 700, mono,
-`--text`. Delta: 9.5 px, `--text-faint`, `--ok` for improvement and `--critical`
+Padding `--s3`. Label: mono 10 px, uppercase, 0.14em. Value: 24 px / 700, mono,
+`--text`. Delta: 10.5 px, `--text-faint`, `--ok` for improvement and `--critical`
 for regression.
 
 KPI blocks share the 1 px grid with the table: no radius, no gap, one shared
@@ -202,13 +202,13 @@ border.
 
 ### Pill
 
-19 px tall, `--r-sm`, 1 px `--border-strong`, mono 9.5 px `--text-muted`. Used
+19 px tall, `--r-sm`, 1 px `--border-strong`, mono 10.5 px `--text-muted`. Used
 for scope and tags (`runtime`, `build`, `dev`). A pill is not interactive and
 never uses a severity color.
 
 ### Severity chip
 
-20 px tall, `--r-sm`, 1 px `currentColor`, 4 px square marker, mono 9.5 px / 600
+20 px tall, `--r-sm`, 1 px `currentColor`, 4 px square marker, mono 10.5 px / 600
 / 0.1em uppercase, tinted background from the matching `--*-soft` token.
 Always carries a word, never only a color.
 
@@ -227,7 +227,7 @@ Always carries a word, never only a color.
 ### Toast
 
 Padding 9/11 px, `--surface-2`, 1 px `--border-strong`, 2 px semantic left
-border, `--r-md`, `--shadow-float`, 11 px text. Auto-dismiss after 6 s; errors
+border, `--r-md`, `--shadow-float`, 12 px text. Auto-dismiss after 6 s; errors
 stay until dismissed. Maximum three stacked, newest on top.
 
 ### Progress
@@ -244,6 +244,6 @@ Centered, maximum 320 px wide, `--s6` vertical padding. 1 px dashed
 
 ### Tooltip
 
-`--surface`, 1 px `--border-strong`, `--r-sm`, `--shadow-float`, mono 10.5 px,
+`--surface`, 1 px `--border-strong`, `--r-sm`, `--shadow-float`, mono 11.5 px,
 maximum 240 px wide, `--s2`/`--s3` padding, appears after 400 ms and hides on
 blur or Escape. Never the only carrier of essential information.

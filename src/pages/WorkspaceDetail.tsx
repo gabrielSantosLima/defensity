@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Artifact, Workspace } from "../../shared/types";
+import type { Artifact, Run, Workspace } from "../../shared/types";
 import { Button } from "../components/Button";
 import { Panel } from "../components/ui";
 import { errorMessage, formatBytes, formatDate, shortHash } from "../lib/format";
@@ -24,15 +24,19 @@ interface WorkspaceDetailProps {
   id: string;
   onBack: () => void;
   onArchived: () => void;
+  onRun: (run: Run) => void;
 }
 
 export function WorkspaceDetail({
   id,
   onBack,
   onArchived,
+  onRun,
 }: WorkspaceDetailProps) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -40,6 +44,7 @@ export function WorkspaceDetail({
     try {
       const found = await window.defensity.getWorkspace(id);
       setWorkspace(found);
+      setRuns(found ? await window.defensity.listRuns(id) : []);
       setError(found ? null : "This workspace no longer exists.");
     } catch (caught) {
       setError(errorMessage(caught));
@@ -51,6 +56,22 @@ export function WorkspaceDetail({
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function startAnalysis() {
+    if (!workspace) {
+      return;
+    }
+    setStarting(true);
+    setError(null);
+    try {
+      const run = await window.defensity.startRun(workspace.id);
+      onRun(run);
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setStarting(false);
+    }
+  }
 
   async function archive() {
     if (!workspace) {
@@ -192,19 +213,84 @@ export function WorkspaceDetail({
         )}
       </Panel>
 
-      <Panel title="Analysis" meta="agent runs arrive in M1">
+      <Panel
+        title="Analysis"
+        meta={
+          runs.some((run) => run.status === "running")
+            ? "run in progress"
+            : "agent core, M1"
+        }
+      >
         <div className="stack">
           <p className="hint">
-            The analysis cycle reads the artifacts, forms hypotheses and validates
-            them in a container. Model and provider are chosen per workspace
-            before the first run.
+            The agent reads the artifacts with scoped tools and reports every step.
+            Model, provider and thinking come from the workspace.
           </p>
-          <div>
-            <Button variant="secondary" disabled>
-              Run analysis
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Button
+              variant="primary"
+              disabled={
+                starting ||
+                !workspace.provider ||
+                !workspace.model ||
+                runs.some((run) => run.status === "running")
+              }
+              onClick={() => void startAnalysis()}
+            >
+              {starting ? "Starting…" : "Run analysis"}
             </Button>
+            {!workspace.provider || !workspace.model ? (
+              <span className="hint">Choose a model before running.</span>
+            ) : null}
           </div>
+          {error ? <div className="alert">{error}</div> : null}
         </div>
+      </Panel>
+
+      <Panel title="Runs" meta={`${runs.length} recent`} flush>
+        {runs.length === 0 ? (
+          <div className="panel-body">No runs yet.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: 110 }}>Status</th>
+                  <th>Model</th>
+                  <th style={{ width: 175 }}>Started</th>
+                  <th style={{ width: 110 }}>Tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runs.map((run) => (
+                  <tr
+                    key={run.id}
+                    className="clickable"
+                    tabIndex={0}
+                    onClick={() => onRun(run)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onRun(run);
+                      }
+                    }}
+                  >
+                    <td>
+                      <span className={`chip run-status run-status--${run.status}`}>
+                        {run.status}
+                      </span>
+                    </td>
+                    <td className="cell-mono">{run.model ?? "—"}</td>
+                    <td className="cell-muted">{formatDate(run.createdAt)}</td>
+                    <td className="cell-mono">
+                      {run.totalTokens.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Panel>
     </div>
   );

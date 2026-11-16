@@ -8,7 +8,7 @@
   "main": "dist/main/electron/bootstrap.js",
   "scripts": {
     "dev": "npm run build:main && concurrently -k -n vite,electron -c cyan,green \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
-    "build:main": "tsc -p tsconfig.main.json",
+    "build:main": "node -e \"require('node:fs').rmSync('dist/main',{recursive:true,force:true})\" && tsc -p tsconfig.main.json",
     "build:icons": "node scripts/build-icons.mjs",
     "build:renderer": "npm run build:main && vite build",
     "build": "npm run build:main && vite build",

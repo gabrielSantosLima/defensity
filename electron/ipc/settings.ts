@@ -1,22 +1,9 @@
 import { ipcMain } from "electron";
-import {
-  PROVIDERS,
-  type ProviderId,
-  type Settings,
-} from "../../shared/types";
-import { saveEngineSettings } from "../application/settings/saveEngineSettings";
-import type { IpcContext } from "./context";
+import type { ProviderId } from "../../shared/types";
+import type { AppUseCases } from "./context";
 
-function withKeyState(context: IpcContext): Settings {
-  const base = context.settings.get();
-  const providerKeys = Object.fromEntries(
-    PROVIDERS.map((provider) => [provider.id, context.secrets.has(provider.id)]),
-  ) as Record<ProviderId, boolean>;
-  return { ...base, providerKeys };
-}
-
-export function registerSettingsHandlers(context: IpcContext): void {
-  ipcMain.handle("settings:get", () => withKeyState(context));
+export function registerSettingsHandlers(useCases: AppUseCases): void {
+  ipcMain.handle("settings:get", () => useCases.getSettings.execute());
 
   ipcMain.handle(
     "settings:save",
@@ -28,19 +15,19 @@ export function registerSettingsHandlers(context: IpcContext): void {
         compatibleBaseUrl?: string;
       },
     ) => {
-      saveEngineSettings(patch, context.settings);
-      return withKeyState(context);
+      useCases.saveSettings.execute(patch);
+      return useCases.getSettings.execute();
     },
   );
 
   ipcMain.handle(
     "secrets:set",
     (_event, provider: ProviderId, value: string) => {
-      context.secrets.set(provider, value);
+      useCases.setProviderKey.execute(provider, value);
     },
   );
 
   ipcMain.handle("secrets:clear", (_event, provider: ProviderId) => {
-    context.secrets.clear(provider);
+    useCases.clearProviderKey.execute(provider);
   });
 }

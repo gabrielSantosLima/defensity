@@ -70,6 +70,57 @@ export interface Artifact {
   createdAt: string;
 }
 
+export type RunStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type RunEventType =
+  | "step.started"
+  | "assistant.message"
+  | "tool.call"
+  | "tool.result"
+  | "usage"
+  | "run.completed"
+  | "run.failed"
+  | "run.cancelled";
+
+export interface Run {
+  id: string;
+  workspaceId: string;
+  status: RunStatus;
+  provider: ProviderId | null;
+  model: string | null;
+  thinking: ThinkingLevel | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  error: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  stepCount: number;
+  createdAt: string;
+}
+
+export interface RunEvent {
+  id: string;
+  runId: string;
+  seq: number;
+  type: RunEventType;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface RunDelta {
+  runId: string;
+  type: "assistant.delta";
+  text: string;
+}
+
+export type RunUpdate = RunEvent | RunDelta;
+
 export interface ModelInfo {
   provider: ProviderId;
   id: string;
@@ -137,6 +188,12 @@ export interface DefensityApi {
     >,
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
+  startRun: (workspaceId: string) => Promise<Run>;
+  cancelRun: (runId: string) => Promise<void>;
+  getRun: (runId: string) => Promise<Run | null>;
+  listRuns: (workspaceId: string) => Promise<Run[]>;
+  listRunEvents: (runId: string) => Promise<RunEvent[]>;
+  onRunUpdate: (listener: (update: RunUpdate) => void) => () => void;
   setProviderKey: (provider: ProviderId, key: string) => Promise<void>;
   clearProviderKey: (provider: ProviderId) => Promise<void>;
 }

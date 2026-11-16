@@ -1,27 +1,47 @@
-import { randomUUID } from "node:crypto";
 import path from "node:path";
-import {
-  app,
-  BrowserWindow,
-  Menu,
-  nativeTheme,
-  safeStorage,
-} from "electron";
-import { createWorkspaceRepository } from "./infrastructure/db/workspaceRepository";
-import { createSettingsRepository } from "./infrastructure/db/settingsRepository";
-import { openDatabase } from "./infrastructure/db/database";
-import { fingerprintPath } from "./infrastructure/fs/fingerprint";
-import {
-  createSecretStore,
-  type Cipher,
-} from "./infrastructure/secrets/secretStore";
+import { app, BrowserWindow, Menu, nativeTheme, safeStorage } from "electron";
+import type { RunUpdate } from "../shared/types";
 import { registerIpc } from "./ipc";
-import type { IpcContext } from "./ipc/context";
+import type { AppUseCases } from "./ipc/context";
+import { createAgentService } from "./services/agentService";
+import { systemClock, systemIds } from "./services/clock";
+import { openDatabase } from "./services/db/database";
+import { fileService } from "./services/fileService";
+import { createProviderService } from "./services/providerService";
+import { createRunService } from "./services/runService";
+import { createSecretService, type Cipher } from "./services/secretService";
+import { createSettingsService } from "./services/settingsService";
+import { createWorkspaceService } from "./services/workspaceService";
+import { ClearProviderKeyUseCase } from "./useCases/providers/clearProviderKey";
+import { ListModelsUseCase } from "./useCases/providers/listModels";
+import { SetProviderKeyUseCase } from "./useCases/providers/setProviderKey";
+import { CancelRunUseCase } from "./useCases/runs/cancelRun";
+import { FinishRunUseCase } from "./useCases/runs/finishRun";
+import { GetRunUseCase } from "./useCases/runs/getRun";
+import { ListRunEventsUseCase } from "./useCases/runs/listRunEvents";
+import { ListRunsUseCase } from "./useCases/runs/listRuns";
+import { RecordRunEventUseCase } from "./useCases/runs/recordRunEvent";
+import { StartRunUseCase } from "./useCases/runs/startRun";
+import { GetSettingsUseCase } from "./useCases/settings/getSettings";
+import { SaveEngineSettingsUseCase } from "./useCases/settings/saveEngineSettings";
+import { ArchiveWorkspaceUseCase } from "./useCases/workspaces/archiveWorkspace";
+import { CreateWorkspaceUseCase } from "./useCases/workspaces/createWorkspace";
+import { GetWorkspaceUseCase } from "./useCases/workspaces/getWorkspace";
+import { ListWorkspacesUseCase } from "./useCases/workspaces/listWorkspaces";
 import { createMainWindow } from "./window";
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 
-function buildContext(userData: string): IpcContext {
+function broadcast(update: RunUpdate): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send("run:update", update);
+  }
+}
+
+function compose(userData: string): {
+  useCases: AppUseCases;
+  dispose: () => void;
+} {
   const database = openDatabase(path.join(userData, "defensity.db"));
 
   const cipher: Cipher = {
@@ -31,14 +51,79 @@ function buildContext(userData: string): IpcContext {
       safeStorage.decryptString(Buffer.from(value, "base64")),
   };
 
-  return {
-    workspaces: createWorkspaceRepository(database),
-    settings: createSettingsRepository(database),
-    secrets: createSecretStore(path.join(userData, "secrets.json"), cipher),
-    fingerprint: fingerprintPath,
-    now: () => new Date().toISOString(),
-    newId: () => randomUUID(),
+  const workspaces = createWorkspaceService(database);
+  const settingsService = createSettingsService(database);
+  const runs = createRunService(database);
+  const secrets = createSecretService(
+    path.join(userData, "secrets.json"),
+    cipher,
+  );
+  const providers = createProviderService();
+
+  const recordRunEvent = new RecordRunEventUseCase({
+    runs,
+    clock: systemClock,
+    ids: systemIds,
+  });
+  const finishRun = new FinishRunUseCase({
+    runs,
+    clock: systemClock,
+    ids: systemIds,
+  });
+
+  const agent = createAgentService({
+    onEvent: (runId, type, payload) => {
+      broadcast(recordRunEvent.execute({ runId, type, payload }));
+    },
+    onDelta: (runId, text) => {
+      broadcast({ runId, type: "assistant.delta", text });
+    },
+    onFinish: (runId, status, error, steps) => {
+      broadcast(finishRun.execute({ runId, status, error, steps }));
+    },
+  });
+
+  const useCases: AppUseCases = {
+    listWorkspaces: new ListWorkspacesUseCase(workspaces),
+    getWorkspace: new GetWorkspaceUseCase(workspaces),
+    createWorkspace: new CreateWorkspaceUseCase({
+      workspaces,
+      files: fileService,
+      clock: systemClock,
+      ids: systemIds,
+    }),
+    archiveWorkspace: new ArchiveWorkspaceUseCase({
+      workspaces,
+      clock: systemClock,
+    }),
+    getSettings: new GetSettingsUseCase({
+      settings: settingsService,
+      secrets,
+    }),
+    saveSettings: new SaveEngineSettingsUseCase(settingsService),
+    setProviderKey: new SetProviderKeyUseCase(secrets),
+    clearProviderKey: new ClearProviderKeyUseCase(secrets),
+    listModels: new ListModelsUseCase({
+      providers,
+      secrets,
+      settings: settingsService,
+    }),
+    startRun: new StartRunUseCase({
+      workspaces,
+      runs,
+      secrets,
+      settings: settingsService,
+      agent,
+      clock: systemClock,
+      ids: systemIds,
+    }),
+    cancelRun: new CancelRunUseCase({ runs, agent }),
+    getRun: new GetRunUseCase(runs),
+    listRuns: new ListRunsUseCase(runs),
+    listRunEvents: new ListRunEventsUseCase(runs),
   };
+
+  return { useCases, dispose: () => agent.dispose() };
 }
 
 function focusExistingWindow(): void {
@@ -67,8 +152,10 @@ if (!hasLock) {
       Menu.setApplicationMenu(null);
     }
 
-    registerIpc(buildContext(app.getPath("userData")));
+    const composed = compose(app.getPath("userData"));
+    registerIpc(composed.useCases);
     createMainWindow(devServerUrl);
+    app.on("will-quit", composed.dispose);
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
