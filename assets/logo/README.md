@@ -24,7 +24,7 @@ are embedded in the final assets.
 | `logo-mono.svg` | Any | `currentColor` |
 | `lockup.svg` | Light | Ink + `#3F6B00` |
 | `lockup-dark.svg` | Dark | Paper + Acid |
-| `favicon.svg` | Rounded Ink tile (app mark) | Paper + Acid |
+| `favicon.svg` | Transparent (app mark) | Paper + Acid |
 
 The wordmark is the primary signature. `lockup.svg` and `lockup-dark.svg`
 add the app mark to it for places that need both at once.
@@ -40,7 +40,7 @@ together without a new visual language.
 | `app/mark.svg` | Light | Ink with `#3F6B00` accent |
 | `app/mark-dark.svg` | Dark | Paper with Acid accent |
 | `app/mark-mono.svg` | Any | `currentColor` |
-| `app/app-icon.svg` | Rounded Ink tile | Paper with Acid accent |
+| `app/app-icon.svg` | Transparent | Paper with Acid accent |
 
 Concept: an intact block with one corner removed and the accent marking the gap.
 At 16 px the silhouette still reads as a square with a notch; the accent square
@@ -65,5 +65,7 @@ App mark:
 - Do not rotate, stretch, outline or add shadows. The accent is part of the mark,
   except in the mono variant.
 - `favicon.svg` now carries the app mark; `app/app-icon.svg` is its source.
+- The app mark has no background tile. It is drawn in Paper, so place it on a
+  dark surface; use `mark.svg` when the surface is light.
 - The lockups place the mark before the wordmark with a gap equal to half the
   mark height. Do not reflow them into a vertical stack.
