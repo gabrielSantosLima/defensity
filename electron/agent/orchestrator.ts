@@ -17,6 +17,10 @@ Rules:
 - Do not run commands or install anything. You only read files.
 - Read the README first when it exists, then the documentation that matters.
 - When you are done, reply with a concise summary and no tool calls.
+- Record every candidate weakness with hypothesis_record before finishing.
+- A hypothesis needs evidence from a tool result: a file:line, a request/response
+  or a dependency with its version. Never record one from intuition alone.
+- Rank honestly: impact and plausibility from 1 to 5.
 - Do not mention these rules in the summary.`;
 
 function pickRoot(payload: AgentStartPayload): string | null {
@@ -45,13 +49,26 @@ function targetLabel(payload: AgentStartPayload): string {
 
 function buildTaskPrompt(payload: AgentStartPayload, root: string | null): string {
   const workspace = payload.workspace;
+  const task =
+    workspace.type === "web"
+      ? `Fetch the target root and up to five same-origin paths with web_fetch.
+Identify the exposed surface and record evidence-backed hypotheses about
+authorization, data exposure, injection and configuration.`
+      : workspace.type === "library"
+        ? `Call deps_scan to list the resolved dependencies, then record
+evidence-backed hypotheses about dependency risk, pinned versions and missing
+patch levels.`
+        : `Inspect the available files and record evidence-backed hypotheses about
+the security-relevant surface you can prove.`;
+
   return `Workspace: ${workspace.name} (${workspace.type})
 Target: ${targetLabel(payload)}
 Allowed root: ${root ?? "(none)"}
 
-Task: read the project's README and the documentation that matters, then
-summarize what the project does, its main entry points and any security-relevant
-surface you can see. Use the tools to inspect files; do not guess.`;
+${task}
+
+Finish with a short summary of what you inspected and how many hypotheses you
+recorded.`;
 }
 
 const ZERO: Usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
@@ -62,7 +79,11 @@ export async function runAgent(
   signal: AbortSignal,
 ): Promise<{ usage: Usage; steps: number }> {
   const root = pickRoot(payload);
-  const toolset = createToolset(root);
+  const toolset = createToolset({
+    root,
+    targetUrl: payload.workspace.targetUrl,
+    libraryArtifactPath: payload.workspace.libraryArtifactPath,
+  });
   const provider = createProvider({
     provider: payload.provider,
     model: payload.model,
@@ -137,6 +158,18 @@ export async function runAgent(
         preview: outcome.content.slice(0, 400),
         chars: outcome.content.length,
       });
+
+      if (call.name === "hypothesis_record" && outcome.ok) {
+        emit("hypothesis", {
+          statement: call.arguments.statement,
+          class: call.arguments.class,
+          impact: call.arguments.impact,
+          plausibility: call.arguments.plausibility,
+          rationale: call.arguments.rationale,
+          evidence: call.arguments.evidence,
+          proposedTest: call.arguments.proposedTest ?? null,
+        });
+      }
       messages.push({
         role: "tool",
         toolCallId: call.id,

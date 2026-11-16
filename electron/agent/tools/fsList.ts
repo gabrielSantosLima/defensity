@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { stringArg } from "./args";
 import { resolveInside } from "./paths";
-import type { Tool, ToolResult } from "./types";
+import { NO_ROOT_MESSAGE, type Tool, type ToolResult } from "./types";
 
 const MAX_ENTRIES = 200;
 
@@ -19,8 +19,11 @@ export const fsListTool: Tool = {
     },
   },
 
-  async execute(args, root): Promise<ToolResult> {
-    const target = resolveInside(root, stringArg(args, "path") ?? ".");
+  async execute(args, context): Promise<ToolResult> {
+    if (!context.root) {
+      return { ok: false, content: NO_ROOT_MESSAGE };
+    }
+    const target = resolveInside(context.root, stringArg(args, "path") ?? ".");
     const entries = await readdir(target, { withFileTypes: true });
     const visible = entries
       .filter((entry) => !entry.name.startsWith("."))

@@ -1,7 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import { stringArg } from "./args";
 import { resolveInside } from "./paths";
-import type { Tool, ToolResult } from "./types";
+import { NO_ROOT_MESSAGE, type Tool, type ToolResult } from "./types";
 
 const MAX_READ_CHARS = 20000;
 
@@ -19,13 +19,16 @@ export const fsReadTool: Tool = {
     },
   },
 
-  async execute(args, root): Promise<ToolResult> {
+  async execute(args, context): Promise<ToolResult> {
+    if (!context.root) {
+      return { ok: false, content: NO_ROOT_MESSAGE };
+    }
     const relative = stringArg(args, "path");
     if (!relative) {
       return { ok: false, content: "Missing argument: path" };
     }
 
-    const target = resolveInside(root, relative);
+    const target = resolveInside(context.root, relative);
     const info = await stat(target);
     if (!info.isFile()) {
       return { ok: false, content: "Not a file" };

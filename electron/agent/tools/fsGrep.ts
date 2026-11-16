@@ -2,7 +2,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { stringArg } from "./args";
 import { resolveInside } from "./paths";
-import type { Tool, ToolResult } from "./types";
+import { NO_ROOT_MESSAGE, type Tool, type ToolResult } from "./types";
 
 const MAX_MATCHES = 60;
 const MAX_FILES = 400;
@@ -32,7 +32,11 @@ export const fsGrepTool: Tool = {
     },
   },
 
-  async execute(args, root): Promise<ToolResult> {
+  async execute(args, context): Promise<ToolResult> {
+    if (!context.root) {
+      return { ok: false, content: NO_ROOT_MESSAGE };
+    }
+    const root = context.root;
     const pattern = stringArg(args, "pattern");
     if (!pattern) {
       return { ok: false, content: "Missing argument: pattern" };

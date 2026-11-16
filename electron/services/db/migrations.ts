@@ -69,6 +69,23 @@ export const MIGRATIONS: string[] = [
   );
 
   CREATE INDEX IF NOT EXISTS run_events_run_idx ON run_events(run_id, seq);
+
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS hypotheses (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    statement TEXT NOT NULL,
+    class TEXT NOT NULL,
+    impact INTEGER NOT NULL,
+    plausibility INTEGER NOT NULL,
+    rationale TEXT NOT NULL,
+    evidence TEXT NOT NULL,
+    proposed_test TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS hypotheses_run_idx ON hypotheses(run_id);
   `,
 ];
 

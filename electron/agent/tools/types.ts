@@ -1,4 +1,8 @@
-import type { AgentTool } from "../types";
+export interface ToolContext {
+  root: string | null;
+  targetUrl: string | null;
+  libraryArtifactPath: string | null;
+}
 
 export interface ToolResult {
   ok: boolean;
@@ -6,6 +10,12 @@ export interface ToolResult {
 }
 
 export interface Tool {
-  definition: AgentTool;
-  execute(args: Record<string, unknown>, root: string): Promise<ToolResult>;
+  definition: import("../types").AgentTool;
+  execute(
+    args: Record<string, unknown>,
+    context: ToolContext,
+  ): Promise<ToolResult>;
 }
+
+export const NO_ROOT_MESSAGE =
+  "No source or documentation directory is available for this workspace. Only file artifacts were provided.";

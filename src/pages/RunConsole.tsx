@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Run, RunEvent, RunUpdate } from "../../shared/types";
+import type {
+  Hypothesis,
+  Run,
+  RunEvent,
+  RunUpdate,
+} from "../../shared/types";
 import { Button } from "../components/Button";
 import { Panel } from "../components/ui";
 import { errorMessage } from "../lib/format";
@@ -28,6 +33,7 @@ interface RunConsoleProps {
 export function RunConsole({ runId, onBack }: RunConsoleProps) {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
+  const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
   const [live, setLive] = useState("");
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
@@ -35,12 +41,14 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
 
   const refresh = useCallback(async () => {
     try {
-      const [current, history] = await Promise.all([
+      const [current, history, found] = await Promise.all([
         window.defensity.getRun(runId),
         window.defensity.listRunEvents(runId),
+        window.defensity.listHypotheses(runId),
       ]);
       setRun(current);
       setEvents(history);
+      setHypotheses(found);
     } catch (caught) {
       setError(errorMessage(caught));
     }
@@ -123,6 +131,11 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           <span>{elapsed(run, now)}</span>
           <span>·</span>
           <span>{run.totalTokens.toLocaleString()} tokens</span>
+          <span>·</span>
+          <span>
+            {hypotheses.length} hypothes
+            {hypotheses.length === 1 ? "is" : "es"}
+          </span>
         </div>
         <div className="page-head-actions">
           {running ? (
@@ -149,7 +162,15 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
             </p>
           ) : null}
 
-          {events.map((event) => {
+          {events
+            .filter(
+              (event) =>
+                !(
+                  (event.type === "tool.call" || event.type === "tool.result") &&
+                  event.payload.name === "hypothesis_record"
+                ),
+            )
+            .map((event) => {
             if (event.type === "step.started") {
               return (
                 <div className="tl-step" key={event.id}>
@@ -195,6 +216,39 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
                 </div>
               );
             }
+            if (event.type === "hypothesis") {
+              const impact = Number(event.payload.impact ?? 0);
+              const plausibility = Number(event.payload.plausibility ?? 0);
+              const evidence = String(event.payload.evidence ?? "");
+              const proposedTest = event.payload.proposedTest
+                ? String(event.payload.proposedTest)
+                : null;
+              return (
+                <div className="tl-hypothesis" key={event.id}>
+                  <div className="tl-hyp-head">
+                    <span className="chip chip--accent">
+                      {String(event.payload.class ?? "other")}
+                    </span>
+                    <span className="tl-hyp-score">
+                      {impact * plausibility}/25
+                    </span>
+                  </div>
+                  <p className="tl-hyp-statement">
+                    {String(event.payload.statement ?? "")}
+                  </p>
+                  <p className="tl-hyp-rationale">
+                    {String(event.payload.rationale ?? "")}
+                  </p>
+                  {evidence ? <pre className="tl-pre">{evidence}</pre> : null}
+                  {proposedTest ? (
+                    <p className="tl-hyp-test">test: {proposedTest}</p>
+                  ) : null}
+                  <span className="tl-hyp-rank">
+                    impact {impact} · plausibility {plausibility}
+                  </span>
+                </div>
+              );
+            }
             if (event.type === "usage") {
               return (
                 <div className="tl-usage" key={event.id}>
@@ -210,7 +264,7 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
                 {event.payload.error ? ` — ${String(event.payload.error)}` : ""}
               </div>
             );
-          })}
+            })}
 
           {live ? (
             <div className="tl-text tl-text--live">

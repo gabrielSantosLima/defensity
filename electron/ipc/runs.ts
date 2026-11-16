@@ -21,4 +21,8 @@ export function registerRunHandlers(useCases: AppUseCases): void {
   ipcMain.handle("runs:events", (_event, runId: string) =>
     useCases.listRunEvents.execute(runId),
   );
+
+  ipcMain.handle("runs:hypotheses", (_event, runId: string) =>
+    useCases.listHypotheses.execute(runId),
+  );
 }

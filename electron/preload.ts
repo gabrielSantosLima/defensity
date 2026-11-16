@@ -15,6 +15,7 @@ const api: DefensityApi = {
   getRun: (runId) => ipcRenderer.invoke("runs:get", runId),
   listRuns: (workspaceId) => ipcRenderer.invoke("runs:list", workspaceId),
   listRunEvents: (runId) => ipcRenderer.invoke("runs:events", runId),
+  listHypotheses: (runId) => ipcRenderer.invoke("runs:hypotheses", runId),
   onRunUpdate: (listener) => {
     const handler = (_event: unknown, update: unknown) =>
       listener(update as never);

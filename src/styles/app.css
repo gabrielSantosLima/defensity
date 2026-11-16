@@ -1040,6 +1040,54 @@ tbody tr.clickable:focus-visible {
   }
 }
 
+
+.tl-hypothesis {
+  display: grid;
+  gap: 7px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.tl-hyp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tl-hyp-score {
+  color: var(--accent);
+  font: 600 11px var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.tl-hyp-statement {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.tl-hyp-rationale {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.tl-hyp-test {
+  color: var(--text-muted);
+  font: 500 11px var(--font-mono);
+}
+
+.tl-hyp-rank {
+  color: var(--text-faint);
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 @media (max-width: 900px) {
   .app-body {
     grid-template-columns: 1fr;
