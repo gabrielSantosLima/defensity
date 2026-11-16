@@ -80,9 +80,11 @@ electron/
     workspaceService.ts SQLite
     settingsService.ts  SQLite
     runService.ts       SQLite
+    hypothesisService.ts SQLite hypotheses
     secretService.ts    OS keychain
     fileService.ts      fingerprints
     providerService.ts  provider HTTP APIs
+    sandboxService.ts   Docker preflight for validation
     agentService.ts     utility process transport
     clock.ts            time and id generation
   useCases/             one class per operation, single execute()

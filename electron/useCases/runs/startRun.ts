@@ -4,6 +4,7 @@ import { createRunRecord, isRunActive } from "../../entities/run";
 import type { AgentService } from "../../services/agentService";
 import type { Clock, Ids } from "../../services/clock";
 import type { RunService } from "../../services/runService";
+import type { SandboxService } from "../../services/sandboxService";
 import type { SecretService } from "../../services/secretService";
 import type { SettingsService } from "../../services/settingsService";
 import type { WorkspaceService } from "../../services/workspaceService";
@@ -14,6 +15,7 @@ interface Deps {
   secrets: SecretService;
   settings: SettingsService;
   agent: AgentService;
+  sandbox: SandboxService;
   clock: Clock;
   ids: Ids;
 }
@@ -24,15 +26,26 @@ export class StartRunUseCase {
   private readonly secrets: SecretService;
   private readonly settings: SettingsService;
   private readonly agent: AgentService;
+  private readonly sandbox: SandboxService;
   private readonly clock: Clock;
   private readonly ids: Ids;
 
-  constructor({ workspaces, runs, secrets, settings, agent, clock, ids }: Deps) {
+  constructor({
+    workspaces,
+    runs,
+    secrets,
+    settings,
+    agent,
+    sandbox,
+    clock,
+    ids,
+  }: Deps) {
     this.workspaces = workspaces;
     this.runs = runs;
     this.secrets = secrets;
     this.settings = settings;
     this.agent = agent;
+    this.sandbox = sandbox;
     this.clock = clock;
     this.ids = ids;
   }
@@ -57,6 +70,8 @@ export class StartRunUseCase {
     if (active) {
       throw new Error("A run is already active for this workspace");
     }
+
+    this.sandbox.preflight();
 
     const baseUrl = baseUrlFor(
       workspace.provider,

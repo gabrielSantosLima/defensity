@@ -10,6 +10,7 @@ import { fileService } from "./services/fileService";
 import { createHypothesisService } from "./services/hypothesisService";
 import { createProviderService } from "./services/providerService";
 import { createRunService } from "./services/runService";
+import { createSandboxService } from "./services/sandboxService";
 import { createSecretService, type Cipher } from "./services/secretService";
 import { createSettingsService } from "./services/settingsService";
 import { createWorkspaceService } from "./services/workspaceService";
@@ -61,6 +62,7 @@ function compose(userData: string): {
     cipher,
   );
   const providers = createProviderService();
+  const sandbox = createSandboxService();
   const hypotheses = createHypothesisService(database);
 
   const recordRunEvent = new RecordRunEventUseCase({
@@ -118,6 +120,7 @@ function compose(userData: string): {
       secrets,
       settings: settingsService,
       agent,
+      sandbox,
       clock: systemClock,
       ids: systemIds,
     }),

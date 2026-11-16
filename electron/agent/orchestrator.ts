@@ -18,6 +18,8 @@ Rules:
 - Do not run commands or install anything. You only read files.
 - Read the README first when it exists, then the documentation that matters.
 - When you are done, reply with a concise summary and no tool calls.
+- probe_run sends bounded HTTP requests from the sandbox and load_run runs a
+  Gatling scenario. Use them only against the workspace target.
 - Record every candidate weakness with hypothesis_record before finishing.
 - A hypothesis needs evidence from a tool result: a file:line, a request/response
   or a dependency with its version. Never record one from intuition alone.

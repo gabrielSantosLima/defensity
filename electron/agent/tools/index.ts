@@ -4,7 +4,9 @@ import { fsGrepTool } from "./fsGrep";
 import { fsListTool } from "./fsList";
 import { fsReadTool } from "./fsRead";
 import { hypothesisRecordTool } from "./hypothesisRecord";
+import { loadRunTool } from "./loadRun";
 import type { Tool, ToolContext, ToolResult } from "./types";
+import { probeRunTool } from "./probeRun";
 import { webFetchTool } from "./webFetch";
 
 const TOOLS: Tool[] = [
@@ -13,6 +15,8 @@ const TOOLS: Tool[] = [
   fsGrepTool,
   webFetchTool,
   depsScanTool,
+  probeRunTool,
+  loadRunTool,
   hypothesisRecordTool,
 ];
 
