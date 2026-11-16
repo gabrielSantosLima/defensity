@@ -1,6 +1,14 @@
 import { BrowserWindow, shell } from "electron";
 import path from "node:path";
 
+const MIN_ZOOM = 0.8;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.1;
+
+function clampZoom(value: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number(value.toFixed(2))));
+}
+
 export function createMainWindow(devServerUrl?: string): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
@@ -23,6 +31,23 @@ export function createMainWindow(devServerUrl?: string): BrowserWindow {
   window.once("ready-to-show", () => {
     window.maximize();
     window.show();
+  });
+
+  window.webContents.on("before-input-event", (event, input) => {
+    if (!input.control && !input.meta) {
+      return;
+    }
+    const current = window.webContents.getZoomFactor();
+    if (input.key === "+" || input.key === "=") {
+      window.webContents.setZoomFactor(clampZoom(current + ZOOM_STEP));
+      event.preventDefault();
+    } else if (input.key === "-" || input.key === "_") {
+      window.webContents.setZoomFactor(clampZoom(current - ZOOM_STEP));
+      event.preventDefault();
+    } else if (input.key === "0") {
+      window.webContents.setZoomFactor(1);
+      event.preventDefault();
+    }
   });
 
   window.webContents.setWindowOpenHandler(({ url }) => {
