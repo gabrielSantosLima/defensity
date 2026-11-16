@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { LayoutGrid, Settings as SettingsIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  LayoutGrid,
+  Settings as SettingsIcon,
+} from "lucide-react";
 import logo from "../assets/logo/logo-dark.svg";
 import version from "../package.json";
 import type { Run, Workspace } from "../shared/types";
@@ -24,7 +29,26 @@ type View =
   | { name: "settings" };
 
 export function App() {
-  const [view, setView] = useState<View>({ name: "workspaces" });
+  const [history, setHistory] = useState<View[]>([{ name: "workspaces" }]);
+  const [index, setIndex] = useState(0);
+  const view = history[index];
+
+  const navigate = useCallback(
+    (next: View) => {
+      setHistory((current) => [...current.slice(0, index + 1), next]);
+      setIndex(index + 1);
+    },
+    [index],
+  );
+
+  const move = useCallback(
+    (delta: number) => {
+      setIndex((current) =>
+        Math.min(Math.max(current + delta, 0), history.length - 1),
+      );
+    },
+    [history.length],
+  );
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +68,23 @@ export function App() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (!event.altKey) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        move(-1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        move(1);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [move]);
 
   const inWorkspaceSection =
     view.name === "workspaces" ||
@@ -76,7 +117,7 @@ export function App() {
             <button
               type="button"
               aria-current={inWorkspaceSection ? "page" : undefined}
-              onClick={() => setView({ name: "workspaces" })}
+              onClick={() => navigate({ name: "workspaces" })}
             >
               <LayoutGrid size={15} strokeWidth={1.5} aria-hidden="true" />
               Workspaces
@@ -89,7 +130,7 @@ export function App() {
             <button
               type="button"
               aria-current={view.name === "settings" ? "page" : undefined}
-              onClick={() => setView({ name: "settings" })}
+              onClick={() => navigate({ name: "settings" })}
             >
               <SettingsIcon size={15} strokeWidth={1.5} aria-hidden="true" />
               Settings
@@ -105,13 +146,33 @@ export function App() {
 
         <main className="main">
           <header className="appbar">
+            <div className="nav-arrows">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Back"
+                disabled={index === 0}
+                onClick={() => move(-1)}
+              >
+                <ArrowLeft size={14} strokeWidth={1.5} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Forward"
+                disabled={index >= history.length - 1}
+                onClick={() => move(1)}
+              >
+                <ArrowRight size={14} strokeWidth={1.5} aria-hidden="true" />
+              </button>
+            </div>
             <h1>{title}</h1>
             <div className="spacer" />
             {view.name === "workspaces" ? (
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => setView({ name: "new" })}
+                onClick={() => navigate({ name: "new" })}
               >
                 New workspace
               </Button>
@@ -120,7 +181,7 @@ export function App() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setView({ name: "workspaces" })}
+                onClick={() => navigate({ name: "workspaces" })}
               >
                 Cancel
               </Button>
@@ -129,7 +190,7 @@ export function App() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setView({ name: "workspaces" })}
+                onClick={() => navigate({ name: "workspaces" })}
               >
                 All workspaces
               </Button>
@@ -147,9 +208,9 @@ export function App() {
               <WorkspacesPage
                 workspaces={workspaces}
                 loading={loading}
-                onCreate={() => setView({ name: "new" })}
+                onCreate={() => navigate({ name: "new" })}
                 onOpen={(workspace) =>
-                  setView({
+                  navigate({
                     name: "workspace",
                     id: workspace.id,
                     title: workspace.name,
@@ -160,10 +221,10 @@ export function App() {
 
             {view.name === "new" ? (
               <WorkspaceForm
-                onCancel={() => setView({ name: "workspaces" })}
+                onCancel={() => navigate({ name: "workspaces" })}
                 onCreated={(workspace) => {
                   void refresh();
-                  setView({
+                  navigate({
                     name: "workspace",
                     id: workspace.id,
                     title: workspace.name,
@@ -175,13 +236,13 @@ export function App() {
             {view.name === "workspace" ? (
               <WorkspaceDetail
                 id={view.id}
-                onBack={() => setView({ name: "workspaces" })}
+                onBack={() => navigate({ name: "workspaces" })}
                 onArchived={() => {
                   void refresh();
-                  setView({ name: "workspaces" });
+                  navigate({ name: "workspaces" });
                 }}
                 onRun={(run: Run) =>
-                  setView({
+                  navigate({
                     name: "run",
                     id: run.id,
                     workspaceId: run.workspaceId,
@@ -189,7 +250,7 @@ export function App() {
                   })
                 }
                 onOpenRun={(runId: string) =>
-                  setView({
+                  navigate({
                     name: "run",
                     id: runId,
                     workspaceId: view.id,
@@ -203,7 +264,7 @@ export function App() {
               <RunConsole
                 runId={view.id}
                 onBack={() =>
-                  setView({
+                  navigate({
                     name: "workspace",
                     id: view.workspaceId,
                     title: view.workspaceName,

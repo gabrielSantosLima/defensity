@@ -1250,6 +1250,35 @@ tbody tr.clickable:focus-visible {
   border-color: color-mix(in srgb, var(--low) 50%, transparent);
 }
 
+
+.nav-arrows {
+  display: flex;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 @media (max-width: 900px) {
   .app-body {
     grid-template-columns: 1fr;
