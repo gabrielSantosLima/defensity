@@ -263,6 +263,7 @@ export function App() {
             {view.name === "run" ? (
               <RunConsole
                 runId={view.id}
+                workspaceName={view.workspaceName}
                 onBack={() =>
                   navigate({
                     name: "workspace",

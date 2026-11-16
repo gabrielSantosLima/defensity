@@ -242,8 +242,8 @@ export function WorkspaceDetail({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Button
               variant="primary"
+              loading={starting}
               disabled={
-                starting ||
                 !workspace.provider ||
                 !workspace.model ||
                 runs.some((run) => run.status === "running")

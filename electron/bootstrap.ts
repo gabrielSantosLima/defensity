@@ -1,5 +1,12 @@
 import path from "node:path";
-import { app, BrowserWindow, Menu, nativeTheme, safeStorage } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  nativeTheme,
+  Notification,
+  safeStorage,
+} from "electron";
 import type { RunUpdate } from "../shared/types";
 import { registerIpc } from "./ipc";
 import type { AppUseCases } from "./ipc/context";
@@ -84,6 +91,28 @@ function compose(userData: string): {
     ids: systemIds,
   });
 
+  function notifyRunFinished(
+    runId: string,
+    status: "completed" | "failed" | "cancelled",
+    error?: string,
+  ): void {
+    if (!Notification.isSupported()) {
+      return;
+    }
+    if (BrowserWindow.getAllWindows().some((window) => window.isFocused())) {
+      return;
+    }
+    const run = runs.get(runId);
+    const workspace = run ? workspaces.get(run.workspaceId) : null;
+    const notification = new Notification({
+      title: `defensity · ${status}`,
+      body: `${workspace?.name ?? "Run"}${error ? ` — ${error}` : ""}`,
+      icon: path.join(__dirname, "../../../build/icon.png"),
+    });
+    notification.on("click", focusExistingWindow);
+    notification.show();
+  }
+
   const agent = createAgentService({
     onEvent: (runId, type, payload) => {
       broadcast(recordRunEvent.execute({ runId, type, payload }));
@@ -93,6 +122,7 @@ function compose(userData: string): {
     },
     onFinish: (runId, status, error, steps) => {
       broadcast(finishRun.execute({ runId, status, error, steps }));
+      notifyRunFinished(runId, status, error);
     },
   });
 

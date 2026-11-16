@@ -106,7 +106,9 @@ export async function runAgent(
   const usage: Usage = { ...ZERO };
   let steps = 0;
 
-  for (let step = 1; step <= payload.limits.maxSteps; step += 1) {
+  // No artificial step cap: the run ends when the model stops calling tools,
+  // the token budget is exhausted or the user cancels.
+  for (let step = 1; ; step += 1) {
     if (signal.aborted) {
       throw new Error("cancelled");
     }

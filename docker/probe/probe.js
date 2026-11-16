@@ -28,12 +28,14 @@ async function run(request, index) {
       body: text.slice(0, 600),
     };
   } catch (error) {
+    const cause = error && error.cause ? error.cause.code : null;
+    const message = error instanceof Error ? error.message : String(error);
     return {
       index,
       identity: request.identity || "anonymous",
       method: request.method || "GET",
       path: request.path || "/",
-      error: error instanceof Error ? error.message : String(error),
+      error: cause ? `${message} (${cause})` : message,
       ms: Date.now() - started,
     };
   }

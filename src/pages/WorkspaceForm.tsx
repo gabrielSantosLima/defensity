@@ -267,7 +267,7 @@ export function WorkspaceForm({ onCancel, onCreated }: WorkspaceFormProps) {
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit" disabled={saving}>
+          <Button variant="primary" type="submit" loading={saving}>
             {saving ? "Creating…" : "Create workspace"}
           </Button>
         </div>

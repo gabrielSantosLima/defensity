@@ -1,6 +1,7 @@
 import type { Workspace } from "../../shared/types";
 import { Button } from "../components/Button";
 import { EmptyState, Panel } from "../components/ui";
+import { Spinner } from "../components/Spinner";
 import { formatDate } from "../lib/format";
 
 const TYPE_LABEL: Record<Workspace["type"], string> = {
@@ -45,7 +46,10 @@ export function WorkspacesPage({
         flush
       >
         {loading ? (
-          <div className="panel-body">Loading workspaces…</div>
+          <div className="panel-body loading-inline">
+            <Spinner />
+            Loading workspaces…
+          </div>
         ) : workspaces.length === 0 ? (
           <div className="panel-body">
             <EmptyState

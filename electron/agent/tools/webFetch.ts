@@ -71,9 +71,12 @@ export const webFetchTool: Tool = {
         headers: { "user-agent": "defensity/0.0.0" },
       });
     } catch (error) {
+      const cause = (error as { cause?: { code?: string } }).cause?.code;
+      const reason =
+        error instanceof Error ? error.message : String(error);
       return {
         ok: false,
-        content: `Request failed: ${error instanceof Error ? error.message : String(error)}`,
+        content: `Request failed: ${reason}${cause ? ` (${cause})` : ""}. Check that the target is running and reachable.`,
       };
     }
 

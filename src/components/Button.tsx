@@ -1,10 +1,12 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Spinner } from "./Spinner";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: "md" | "sm";
+  loading?: boolean;
   children: ReactNode;
 }
 
@@ -13,6 +15,7 @@ export function Button({
   size = "md",
   className,
   type = "button",
+  loading = false,
   children,
   ...rest
 }: ButtonProps) {
@@ -26,7 +29,14 @@ export function Button({
     .join(" ");
 
   return (
-    <button type={type} className={classes} {...rest}>
+    <button
+      type={type}
+      className={classes}
+      aria-busy={loading || undefined}
+      disabled={rest.disabled || loading}
+      {...rest}
+    >
+      {loading ? <Spinner size={13} /> : null}
       {children}
     </button>
   );

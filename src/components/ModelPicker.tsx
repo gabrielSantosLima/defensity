@@ -8,6 +8,7 @@ import {
   type ThinkingLevel,
 } from "../../shared/types";
 import { Button } from "./Button";
+import { Spinner } from "./Spinner";
 import { errorMessage } from "../lib/format";
 
 export interface ModelSelection {
@@ -242,7 +243,10 @@ export function ModelPicker({ value, onChange }: ModelPickerProps) {
 
             <div className="model-list">
               {loading ? (
-                <div className="model-status">Loading models…</div>
+                <div className="model-status loading-inline">
+                  <Spinner />
+                  Loading models…
+                </div>
               ) : connected.length === 0 ? (
                 <div className="model-status">
                   No providers connected. Add an API key in Settings to list

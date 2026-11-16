@@ -18,7 +18,7 @@ export function SettingsPage() {
   const [dockerHost, setDockerHost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -44,7 +44,7 @@ export function SettingsPage() {
     if (!keyDraft.trim()) {
       return;
     }
-    setBusy(true);
+    setBusy("key");
     setError(null);
     try {
       await window.defensity.setProviderKey(selected, keyDraft);
@@ -54,12 +54,12 @@ export function SettingsPage() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   async function clearKey() {
-    setBusy(true);
+    setBusy("clear");
     setError(null);
     try {
       await window.defensity.clearProviderKey(selected);
@@ -68,12 +68,12 @@ export function SettingsPage() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   async function saveBaseUrl() {
-    setBusy(true);
+    setBusy("base");
     setError(null);
     try {
       const updated = await window.defensity.saveSettings({
@@ -84,12 +84,12 @@ export function SettingsPage() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   async function saveEngine() {
-    setBusy(true);
+    setBusy("engine");
     setError(null);
     try {
       const updated = await window.defensity.saveSettings({
@@ -102,7 +102,7 @@ export function SettingsPage() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -178,7 +178,8 @@ export function SettingsPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    disabled={busy}
+                    loading={busy === "base"}
+                    disabled={busy !== null}
                     onClick={() => void saveBaseUrl()}
                   >
                     Save
@@ -200,7 +201,8 @@ export function SettingsPage() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={busy || !keyDraft.trim()}
+                  loading={busy === "key"}
+                  disabled={busy !== null || !keyDraft.trim()}
                   onClick={() => void saveKey()}
                 >
                   Save
@@ -209,7 +211,8 @@ export function SettingsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={busy}
+                    loading={busy === "clear"}
+                    disabled={busy !== null}
                     onClick={() => void clearKey()}
                   >
                     Clear
@@ -269,10 +272,11 @@ export function SettingsPage() {
           <div>
             <Button
               variant="primary"
-              disabled={busy}
+              loading={busy === "engine"}
+              disabled={busy !== null}
               onClick={() => void saveEngine()}
             >
-              {busy ? "Saving…" : "Save settings"}
+              Save settings
             </Button>
           </div>
         </div>

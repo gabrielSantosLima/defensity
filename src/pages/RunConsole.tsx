@@ -7,6 +7,7 @@ import type {
   RunUpdate,
 } from "../../shared/types";
 import { Button } from "../components/Button";
+import { Spinner } from "../components/Spinner";
 import { Panel } from "../components/ui";
 import { errorMessage } from "../lib/format";
 
@@ -56,10 +57,15 @@ function groupEvents(events: RunEvent[]): Block[] {
 
 interface RunConsoleProps {
   runId: string;
+  workspaceName: string;
   onBack: () => void;
 }
 
-export function RunConsole({ runId, onBack }: RunConsoleProps) {
+export function RunConsole({
+  runId,
+  workspaceName,
+  onBack,
+}: RunConsoleProps) {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
@@ -279,7 +285,10 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
   if (!run) {
     return (
       <div className="page">
-        <div className="panel-body">{error ?? "Loading run…"}</div>
+        <div className="panel-body loading-inline">
+          <Spinner />
+          {error ?? "Loading run…"}
+        </div>
       </div>
     );
   }
@@ -300,43 +309,52 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
     .find((block) => block.type === "group");
 
   return (
-    <div className="page">
-      <div className="page-head">
-        <div className="detail-meta">
-          <span className={`chip run-status run-status--${run.status}`}>
-            {run.status}
-          </span>
-          <span className="cell-mono">
-            {run.provider ?? "—"} · {run.model ?? "—"}
-          </span>
-          <span>·</span>
-          <span>{elapsed(run, now)}</span>
-          <span>·</span>
-          <span>{run.totalTokens.toLocaleString()} tokens</span>
-          <span>·</span>
-          <span>
-            {findings.length} issue{findings.length === 1 ? "" : "s"}
-          </span>
-          <span>·</span>
-          <span>
-            {hypotheses.length} hypothes
-            {hypotheses.length === 1 ? "is" : "es"}
-          </span>
-        </div>
-        <div className="page-head-actions">
-          <Button variant="secondary" size="sm" onClick={() => void openReport()}>
-            Report
-          </Button>
-          {running ? (
-            <Button variant="danger" size="sm" onClick={() => void cancel()}>
-              Cancel run
+    <>
+      <header className="run-head">
+        <div className="run-head-inner">
+          <div className="run-identity">
+            <span className="run-project">{workspaceName}</span>
+            <span className={`chip run-status run-status--${run.status}`}>
+              {run.status}
+            </span>
+          </div>
+          <div className="run-stats">
+            <span>{run.provider ?? "—"} · {run.model ?? "—"}</span>
+            <span>·</span>
+            <span>{elapsed(run, now)}</span>
+            <span>·</span>
+            <span>{run.totalTokens.toLocaleString()} tokens</span>
+            <span>·</span>
+            <span>
+              {findings.length} issue{findings.length === 1 ? "" : "s"}
+            </span>
+            <span>·</span>
+            <span>
+              {hypotheses.length} hypothes
+              {hypotheses.length === 1 ? "is" : "es"}
+            </span>
+          </div>
+          <div className="run-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void openReport()}
+            >
+              Report
             </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            Back
-          </Button>
+            {running ? (
+              <Button variant="danger" size="sm" onClick={() => void cancel()}>
+                Cancel run
+              </Button>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              Back
+            </Button>
+          </div>
         </div>
-      </div>
+      </header>
+
+      <div className="page run-page">
 
       {error ? <div className="alert">{error}</div> : null}
 
@@ -417,6 +435,7 @@ export function RunConsole({ runId, onBack }: RunConsoleProps) {
           </div>
         </div>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }
