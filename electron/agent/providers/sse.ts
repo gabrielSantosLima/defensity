@@ -61,6 +61,19 @@ export async function* sseData(
   }
 }
 
+export class ProviderRequestError extends Error {
+  constructor(
+    provider: string,
+    readonly status: number,
+    detail: string,
+  ) {
+    super(
+      `${provider} refused the request (HTTP ${status})${detail ? `: ${detail}` : ""}`,
+    );
+    this.name = "ProviderRequestError";
+  }
+}
+
 export async function assertOk(
   response: Response,
   provider: string,
@@ -74,9 +87,7 @@ export async function assertOk(
   } catch {
     // ignore
   }
-  throw new Error(
-    `${provider} refused the request (HTTP ${response.status})${detail ? `: ${detail}` : ""}`,
-  );
+  throw new ProviderRequestError(provider, response.status, detail);
 }
 
 /**

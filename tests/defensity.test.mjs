@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -25,6 +25,25 @@ const { createSandboxService } = require(
 );
 const { sseData } = require(
   "../dist/main/electron/agent/providers/sse.js",
+);
+const { ProviderRequestError } = require(
+  "../dist/main/electron/agent/providers/sse.js",
+);
+const {
+  buildSummaryTranscript,
+  compactionCeiling,
+  createCheckpointMessage,
+  estimateMessages,
+  isContextOverflowError,
+  resolveContextWindow,
+  splitConversation,
+  tailTokenLimit,
+} = require("../dist/main/electron/agent/compaction.js");
+const { hypothesisListTool } = require(
+  "../dist/main/electron/agent/tools/hypothesisList.js",
+);
+const { runAgent } = require(
+  "../dist/main/electron/agent/orchestrator.js",
 );
 const { openDatabase } = require(
   "../dist/main/electron/services/db/database.js",
@@ -114,6 +133,45 @@ function event(overrides = {}) {
   };
 }
 
+function agentPayload(directory, overrides = {}) {
+  return {
+    runId: "run-agent-test",
+    provider: "openai",
+    model: "model-4k",
+    thinking: "off",
+    apiKey: "test-key",
+    baseUrl: "http://127.0.0.1:1",
+    workspace: {
+      id: "workspace-agent",
+      name: "Agent test",
+      type: "library",
+      targetUrl: null,
+      targetApkPath: null,
+      libraryArtifactPath: null,
+      sourcePath: directory,
+      docsPath: null,
+    },
+    limits: { maxToolResultChars: 60_000 },
+    allowInvalidCertificates: false,
+    ...overrides,
+  };
+}
+
+function createEmitter() {
+  const events = [];
+  const emit = (type, payload) => events.push({ type, payload });
+  emit.delta = () => {};
+  return { emit, events };
+}
+
+function summaryResponse(text = "## Objective\n- compressed summary") {
+  return {
+    text,
+    toolCalls: [],
+    usage: { promptTokens: 20, completionTokens: 5, totalTokens: 25 },
+  };
+}
+
 test("run context carries existing issues and previous hypotheses", () => {
   const context = buildRunContext({
     issues: [
@@ -157,6 +215,8 @@ test("finding_record refuses a title already registered in the workspace", async
     allowInvalidCertificates: false,
     dockerHost: "",
     knownFindingTitles: new Set(["idor on /api/users"]),
+    hypotheses: [],
+    findings: [],
   };
 
   const duplicate = await findingRecordTool.execute(
@@ -291,7 +351,14 @@ test("rerun seeds the source conversation and a fresh run keeps workspace knowle
   assert.ok(captured.seed.includes("I found an IDOR candidate"));
   assert.ok(captured.seed.includes(issue.title));
   assert.ok(captured.seed.includes(explored.statement));
-  assert.deepEqual(captured.knownFindingTitles, [issue.title]);
+  assert.deepEqual(
+    captured.knownFindings.map((finding) => finding.title),
+    [issue.title],
+  );
+  assert.deepEqual(
+    captured.knownHypotheses.map((hypothesis) => hypothesis.statement),
+    [explored.statement],
+  );
 
   runs.setStatus(rerun.id, "completed", { endedAt: now() });
   captured = null;
@@ -299,7 +366,14 @@ test("rerun seeds the source conversation and a fresh run keeps workspace knowle
   assert.ok(captured.seed.includes(issue.title));
   assert.ok(captured.seed.includes(explored.statement));
   assert.ok(!captured.seed.includes("Source conversation from run"));
-  assert.deepEqual(captured.knownFindingTitles, [issue.title]);
+  assert.deepEqual(
+    captured.knownFindings.map((finding) => finding.title),
+    [issue.title],
+  );
+  assert.deepEqual(
+    captured.knownHypotheses.map((hypothesis) => hypothesis.statement),
+    [explored.statement],
+  );
 
   database.close();
 });
@@ -413,6 +487,379 @@ test("sseData aborts a provider stream that stops sending data", async () => {
   }, /stopped streaming for 50ms/);
 });
 
+test("compaction sizing follows the model window without settings", () => {
+  assert.equal(resolveContextWindow("openai", "gpt-4o"), 128_000);
+  assert.equal(resolveContextWindow("gemini", "gemini-2.5-pro"), 1_000_000);
+  assert.equal(resolveContextWindow("anthropic", "claude-4"), 200_000);
+  assert.equal(resolveContextWindow("deepinfra", "model-256k"), 256_000);
+
+  const window = 128_000;
+  const ceiling = compactionCeiling(window);
+  assert.equal(ceiling, 64_000);
+  assert.ok(tailTokenLimit(window, ceiling) >= 2_000);
+});
+
+test("compaction keeps an exchange boundary and preserves the previous checkpoint", () => {
+  const conversation = [
+    { id: "u1", role: "user", content: "first question" },
+    {
+      id: "a1",
+      role: "assistant",
+      content: "first answer",
+      toolCalls: [{ id: "c1", name: "fs_read", arguments: { path: "a.ts" } }],
+    },
+    {
+      id: "t1",
+      role: "tool",
+      toolCallId: "c1",
+      content: "tool output",
+    },
+    { id: "u2", role: "user", content: "recent question" },
+    { id: "a2", role: "assistant", content: "recent answer" },
+  ];
+  const checkpoint = createCheckpointMessage("old checkpoint", "auto");
+  const split = splitConversation([checkpoint, ...conversation], 8);
+
+  assert.equal(split.previousSummary, "old checkpoint");
+  assert.equal(split.tail[0].id, "u2");
+  assert.ok(split.history.length > 0);
+});
+
+test("summary transcript drops detail from the oldest exchange", () => {
+  const history = [
+    { role: "user", content: "old question" },
+    {
+      role: "assistant",
+      content: "old answer",
+      toolCalls: [
+        { id: "c1", name: "fs_read", arguments: { path: "old.ts" } },
+      ],
+    },
+    {
+      role: "tool",
+      toolCallId: "c1",
+      content: "x".repeat(20_000),
+    },
+    { role: "user", content: "newest question" },
+    { role: "assistant", content: "newest answer" },
+  ];
+  const transcript = buildSummaryTranscript(history, 300);
+
+  assert.ok(transcript);
+  assert.ok(transcript.length < 4_000);
+  assert.match(transcript, /newest question/);
+  assert.match(transcript, /newest answer/);
+});
+
+test("context overflow is recognized from status and message", () => {
+  assert.equal(isContextOverflowError(new ProviderRequestError("OpenAI", 413, "")), true);
+  assert.equal(
+    isContextOverflowError(new Error("maximum context length exceeded")),
+    true,
+  );
+  assert.equal(isContextOverflowError(new ProviderRequestError("OpenAI", 500, "")), false);
+  assert.equal(isContextOverflowError(new Error("network down")), false);
+});
+
+test("hypothesis_list exposes hypotheses and findings to the agent", async () => {
+  const result = await hypothesisListTool.execute(
+    {},
+    {
+      root: null,
+      targetUrl: null,
+      libraryArtifactPath: null,
+      allowInvalidCertificates: false,
+      dockerHost: "",
+      knownFindingTitles: new Set(),
+      hypotheses: [
+        {
+          statement: "The users endpoint does not verify ownership",
+          class: "authz",
+          impact: 4,
+          plausibility: 5,
+          rationale: "returns the row by id",
+          evidence: "server.mjs:34",
+          proposedTest: "request user 2 anonymously",
+        },
+      ],
+      findings: [
+        {
+          title: "IDOR on /api/users",
+          severity: "high",
+          class: "authz",
+          evidence: "anonymous GET /api/users/1 returned another user",
+          validator: "probe_run",
+        },
+      ],
+    },
+  );
+
+  assert.equal(result.ok, true);
+  assert.match(result.content, /does not verify ownership/);
+  assert.match(result.content, /IDOR on \/api\/users/);
+  assert.match(result.content, /Hypotheses recorded \(1\)/);
+  assert.match(result.content, /Validated findings \(1\)/);
+});
+
+test("runAgent compacts automatically before the next step", async () => {
+  const directory = tempDir();
+  writeFileSync(path.join(directory, "big.txt"), "x".repeat(20_000));
+  const normalRequests = [];
+  let normalCalls = 0;
+  let summaryCalls = 0;
+  const provider = {
+    async chat(request) {
+      if (request.tools.length === 0) {
+        summaryCalls += 1;
+        return summaryResponse("## Objective\n- automatic compaction summary");
+      }
+      normalCalls += 1;
+      normalRequests.push(request.messages);
+      if (normalCalls === 1) {
+        return {
+          text: "",
+          toolCalls: [
+            { id: "c1", name: "fs_read", arguments: { path: "big.txt" } },
+          ],
+          usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 },
+        };
+      }
+      return {
+        text: "analysis complete",
+        toolCalls: [],
+        usage: { promptTokens: 80, completionTokens: 5, totalTokens: 85 },
+      };
+    },
+  };
+  const { emit, events } = createEmitter();
+
+  await runAgent(
+    agentPayload(directory),
+    emit,
+    new AbortController().signal,
+    provider,
+  );
+
+  assert.equal(summaryCalls, 1);
+  const compaction = events.filter((item) => item.type === "compaction");
+  assert.equal(compaction.length, 1);
+  assert.equal(compaction[0].payload.mode, "auto");
+  assert.match(compaction[0].payload.summary, /automatic compaction summary/);
+  assert.ok(
+    normalRequests[1].some(
+      (message) =>
+        message.kind === "checkpoint" &&
+        message.content.includes("automatic compaction summary"),
+    ),
+  );
+});
+
+test("runAgent recovers from a provider context overflow", async () => {
+  const directory = tempDir();
+  writeFileSync(path.join(directory, "medium.txt"), "y".repeat(5_000));
+  const normalRequests = [];
+  let normalCalls = 0;
+  let summaryCalls = 0;
+  const provider = {
+    async chat(request) {
+      if (request.tools.length === 0) {
+        summaryCalls += 1;
+        return summaryResponse("## Objective\n- overflow summary");
+      }
+      normalCalls += 1;
+      normalRequests.push(request.messages);
+      if (normalCalls === 1) {
+        return {
+          text: "",
+          toolCalls: [
+            { id: "c1", name: "fs_read", arguments: { path: "medium.txt" } },
+          ],
+          usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 },
+        };
+      }
+      if (normalCalls === 2) {
+        throw new ProviderRequestError(
+          "Fake",
+          400,
+          "maximum context length exceeded",
+        );
+      }
+      return {
+        text: "analysis complete",
+        toolCalls: [],
+        usage: { promptTokens: 60, completionTokens: 5, totalTokens: 65 },
+      };
+    },
+  };
+  const { emit, events } = createEmitter();
+
+  await runAgent(
+    agentPayload(directory),
+    emit,
+    new AbortController().signal,
+    provider,
+  );
+
+  assert.equal(summaryCalls, 1);
+  const compaction = events.filter((item) => item.type === "compaction");
+  assert.equal(compaction.length, 1);
+  assert.equal(compaction[0].payload.mode, "overflow");
+  assert.match(compaction[0].payload.summary, /overflow summary/);
+  assert.ok(
+    normalRequests.at(-1).some((message) => message.kind === "checkpoint"),
+  );
+});
+
+test("runAgent precomputes a summary without blocking the step", async () => {
+  const directory = tempDir();
+  writeFileSync(path.join(directory, "first.txt"), "a".repeat(12_000));
+  writeFileSync(path.join(directory, "second.txt"), "b".repeat(12_000));
+  const normalRequests = [];
+  let normalCalls = 0;
+  let summaryCalls = 0;
+  let summaryStartedDuringStep = false;
+  let summaryStarted = false;
+  const provider = {
+    async chat(request) {
+      if (request.tools.length === 0) {
+        summaryCalls += 1;
+        summaryStarted = true;
+        return summaryResponse("## Objective\n- background summary");
+      }
+      normalCalls += 1;
+      normalRequests.push(request.messages);
+      if (normalCalls === 2) {
+        summaryStartedDuringStep = summaryStarted;
+        return {
+          text: "",
+          toolCalls: [
+            { id: "c2", name: "fs_read", arguments: { path: "second.txt" } },
+          ],
+          usage: { promptTokens: 3_200, completionTokens: 10, totalTokens: 3_210 },
+        };
+      }
+      if (normalCalls === 1) {
+        return {
+          text: "",
+          toolCalls: [
+            { id: "c1", name: "fs_read", arguments: { path: "first.txt" } },
+          ],
+          usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 },
+        };
+      }
+      return {
+        text: "analysis complete",
+        toolCalls: [],
+        usage: { promptTokens: 80, completionTokens: 5, totalTokens: 85 },
+      };
+    },
+  };
+  const { emit, events } = createEmitter();
+
+  await runAgent(
+    agentPayload(directory),
+    emit,
+    new AbortController().signal,
+    provider,
+  );
+
+  assert.equal(summaryStartedDuringStep, true);
+  assert.equal(summaryCalls, 1);
+  const compaction = events.filter((item) => item.type === "compaction");
+  assert.equal(compaction.length, 1);
+  assert.equal(compaction[0].payload.mode, "background");
+  assert.equal(compaction[0].payload.usedBackground, true);
+  assert.match(compaction[0].payload.summary, /background summary/);
+  assert.ok(
+    normalRequests.at(-1).some((message) => message.kind === "checkpoint"),
+  );
+});
+
+test("runAgent nudges the agent out of the hypothesis phase", async () => {
+  const directory = tempDir();
+  const normalRequests = [];
+  let normalCalls = 0;
+  const provider = {
+    async chat(request) {
+      normalCalls += 1;
+      normalRequests.push(request.messages);
+      if (normalCalls === 1) {
+        return {
+          text: "",
+          toolCalls: [
+            {
+              id: "h1",
+              name: "hypothesis_record",
+              arguments: {
+                statement: "The search endpoint reflects SQL errors",
+                class: "injection",
+                impact: 4,
+                plausibility: 4,
+                rationale: "the query is interpolated into the response",
+                evidence: "src/search.ts:42",
+                proposedTest: "send a quote in q",
+              },
+            },
+          ],
+          usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 },
+        };
+      }
+      if (normalCalls === 2) {
+        return {
+          text: "analysis complete",
+          toolCalls: [],
+          usage: { promptTokens: 80, completionTokens: 5, totalTokens: 85 },
+        };
+      }
+      if (normalCalls === 3) {
+        return {
+          text: "",
+          toolCalls: [
+            {
+              id: "f1",
+              name: "finding_record",
+              arguments: {
+                title: "Reflected SQL error in search",
+                severity: "medium",
+                class: "injection",
+                evidence: "GET /api/search?q=' returned the SQL statement",
+                validator: "probe_run",
+              },
+            },
+          ],
+          usage: { promptTokens: 90, completionTokens: 8, totalTokens: 98 },
+        };
+      }
+      return {
+        text: "analysis complete",
+        toolCalls: [],
+        usage: { promptTokens: 70, completionTokens: 5, totalTokens: 75 },
+      };
+    },
+  };
+  const { emit, events } = createEmitter();
+
+  await runAgent(
+    agentPayload(directory),
+    emit,
+    new AbortController().signal,
+    provider,
+  );
+
+  assert.equal(normalCalls, 4);
+  assert.ok(
+    normalRequests[2].some(
+      (message) =>
+        message.role === "user" &&
+        message.content.includes("Do not stop at the hypothesis phase"),
+    ),
+  );
+  assert.equal(
+    events.filter((item) => item.type === "finding").length,
+    1,
+  );
+});
+
 test("sandbox status has a stable shape and preflight matches it", () => {
   const sandbox = createSandboxService({
     dockerRoot: path.join(root, "docker"),
@@ -467,6 +914,8 @@ test("probe container reaches the sample app", async (t) => {
         allowInvalidCertificates: false,
         dockerHost: "",
         knownFindingTitles: new Set(),
+        hypotheses: [],
+        findings: [],
       },
     );
 

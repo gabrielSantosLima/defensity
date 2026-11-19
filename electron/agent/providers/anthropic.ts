@@ -93,6 +93,9 @@ export function createAnthropicProvider(config: ProviderConfig): ChatProvider {
         })),
         stream: true,
       };
+      if (request.tools.length === 0) {
+        delete (body as { tools?: unknown }).tools;
+      }
       if (converted.system) {
         body.system = converted.system;
       }

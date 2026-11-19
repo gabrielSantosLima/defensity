@@ -97,6 +97,7 @@ export class StartRunUseCase {
     }
 
     const knownIssues = this.findings.listByWorkspace(workspace.id);
+    const workspaceHypotheses = this.hypotheses.listByWorkspace(workspace.id);
     let sourceRun: Run | null = null;
     let sourceEvents: ReturnType<RunService["listEvents"]> = [];
     if (options?.rerunOf) {
@@ -110,9 +111,12 @@ export class StartRunUseCase {
 
     const seed = buildRunContext({
       issues: knownIssues,
-      hypotheses: this.hypotheses.listByWorkspace(workspace.id),
+      hypotheses: workspaceHypotheses,
       sourceRun,
       sourceEvents,
+      checkpoint: sourceRun
+        ? this.latestCheckpointFromEvents(sourceEvents)
+        : this.latestCheckpoint(workspace.id),
     });
 
     const run = createRunRecord({
@@ -141,17 +145,57 @@ export class StartRunUseCase {
       apiKey,
       baseUrl,
       seed,
-      knownFindingTitles: knownIssues.map((finding) => finding.title),
+      knownHypotheses: workspaceHypotheses.map((hypothesis) => ({
+        statement: hypothesis.statement,
+        class: hypothesis.class,
+        impact: hypothesis.impact,
+        plausibility: hypothesis.plausibility,
+        rationale: hypothesis.rationale,
+        evidence: hypothesis.evidence,
+        proposedTest: hypothesis.proposedTest,
+      })),
+      knownFindings: knownIssues.map((finding) => ({
+        title: finding.title,
+        severity: finding.severity,
+        class: finding.class,
+        evidence: finding.evidence,
+        validator: finding.validator,
+      })),
       dockerHost: this.settings.get().dockerHost,
       allowInvalidCertificates:
         this.settings.get().allowInvalidCertificates,
       limits: {
         maxToolResultChars: 12000,
-        budget: this.settings.get().compactionBudget,
-        maxTokens: this.settings.get().runTokenBudget,
       },
     });
 
     return run;
+  }
+
+  private latestCheckpointFromEvents(
+    events: ReturnType<RunService["listEvents"]>,
+  ): string | null {
+    for (let index = events.length - 1; index >= 0; index -= 1) {
+      const event = events[index];
+      if (event.type === "compaction" && typeof event.payload.summary === "string") {
+        const summary = event.payload.summary.trim();
+        if (summary) {
+          return summary;
+        }
+      }
+    }
+    return null;
+  }
+
+  private latestCheckpoint(workspaceId: string): string | null {
+    for (const previous of this.runs.listByWorkspace(workspaceId)) {
+      const summary = this.latestCheckpointFromEvents(
+        this.runs.listEvents(previous.id),
+      );
+      if (summary) {
+        return summary;
+      }
+    }
+    return null;
   }
 }

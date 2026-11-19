@@ -1,3 +1,5 @@
+import type { AgentFinding, AgentHypothesis } from "../types";
+
 export interface ToolContext {
   root: string | null;
   targetUrl: string | null;
@@ -6,6 +8,8 @@ export interface ToolContext {
   dockerHost: string;
   /** Normalized titles of issues already registered in this workspace. */
   knownFindingTitles: Set<string>;
+  hypotheses: AgentHypothesis[];
+  findings: AgentFinding[];
 }
 
 export interface ToolResult {

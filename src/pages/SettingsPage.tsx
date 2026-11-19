@@ -14,8 +14,6 @@ export function SettingsPage() {
   const [selected, setSelected] = useState<ProviderId>("anthropic");
   const [keyDraft, setKeyDraft] = useState("");
   const [baseUrlDraft, setBaseUrlDraft] = useState("");
-  const [budget, setBudget] = useState("");
-  const [runBudget, setRunBudget] = useState("");
   const [allowInvalid, setAllowInvalid] = useState(false);
   const [closeToTray, setCloseToTray] = useState(true);
   const [dockerHost, setDockerHost] = useState("");
@@ -30,8 +28,6 @@ export function SettingsPage() {
     try {
       const current = await window.defensity.getSettings();
       setSettings(current);
-      setBudget(String(current.compactionBudget));
-      setRunBudget(String(current.runTokenBudget));
       setAllowInvalid(current.allowInvalidCertificates);
       setCloseToTray(current.closeToTray);
       setDockerHost(current.dockerHost);
@@ -143,8 +139,6 @@ export function SettingsPage() {
     setError(null);
     try {
       const updated = await window.defensity.saveSettings({
-        compactionBudget: Number(budget),
-        runTokenBudget: Number(runBudget),
         allowInvalidCertificates: allowInvalid,
         closeToTray,
         dockerHost,
@@ -353,36 +347,6 @@ export function SettingsPage() {
 
       <Panel title="Engine">
         <div className="stack">
-          <Field
-            label="Session compaction budget"
-            htmlFor="compaction-budget"
-            hint="Tokens per session. Compaction triggers at 80% of this value."
-          >
-            <input
-              id="compaction-budget"
-              className="input"
-              type="number"
-              min={20000}
-              step={1000}
-              value={budget}
-              onChange={(event) => setBudget(event.target.value)}
-            />
-          </Field>
-          <Field
-            label="Run token budget"
-            htmlFor="run-token-budget"
-            hint="Hard cap per run. The run fails when the total exceeds this value."
-          >
-            <input
-              id="run-token-budget"
-              className="input"
-              type="number"
-              min={10000}
-              step={10000}
-              value={runBudget}
-              onChange={(event) => setRunBudget(event.target.value)}
-            />
-          </Field>
           <Field
             label="TLS verification"
             hint="Enable only for test targets with self-signed certificates. Applies to agent requests and probe containers."

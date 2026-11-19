@@ -6,7 +6,7 @@ import {
   type PointerEvent,
   type WheelEvent,
 } from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Play } from "lucide-react";
 import type {
   Finding,
   Hypothesis,
@@ -404,21 +404,33 @@ export function RunConsole({
       );
     }
     if (event.type === "compaction") {
+      const mode = String(event.payload.mode ?? "auto");
+      const summary = String(event.payload.summary ?? "");
+      const fallback = event.payload.fallback === true;
       return (
-        <div className="tl-usage" key={event.id}>
-          context compacted ·{" "}
-          {Number(event.payload.tokensBefore ?? 0).toLocaleString()} →{" "}
-          {Number(event.payload.tokensAfter ?? 0).toLocaleString()} tokens ·{" "}
-          {Number(event.payload.removedMessages ?? 0)} messages summarized
-        </div>
+        <details className="tl-compaction" key={event.id}>
+          <summary className="tl-compaction-summary">
+            context compacted · {mode}
+            {event.payload.usedBackground === true ? " · precomputed" : ""} ·{" "}
+            {Number(event.payload.tokensBefore ?? 0).toLocaleString()} →{" "}
+            {Number(event.payload.tokensAfter ?? 0).toLocaleString()} tokens ·{" "}
+            {Number(event.payload.removedMessages ?? 0)} messages summarized
+            {fallback ? " · fallback" : ""}
+          </summary>
+          <pre className="tl-pre">
+            {summary || "No summary was recorded for this compaction."}
+          </pre>
+        </details>
       );
     }
     if (event.type === "usage") {
+      const compaction = event.payload.compaction === true;
       return (
         <div className="tl-usage" key={event.id}>
-          +{Number(event.payload.totalTokens ?? 0)} tokens (
-          {Number(event.payload.promptTokens ?? 0)} in /{" "}
-          {Number(event.payload.completionTokens ?? 0)} out)
+          {compaction ? "compaction summary" : "request"} ·{" "}
+          {Number(event.payload.totalTokens ?? 0).toLocaleString()} tokens (
+          {Number(event.payload.promptTokens ?? 0).toLocaleString()} in /{" "}
+          {Number(event.payload.completionTokens ?? 0).toLocaleString()} out)
         </div>
       );
     }
@@ -452,6 +464,18 @@ export function RunConsole({
         ),
     ),
   );
+  const latestStep = [...events]
+    .reverse()
+    .find((event) => event.type === "step.started");
+  const latestUsage = [...events]
+    .reverse()
+    .find((event) => event.type === "usage");
+  const contextTokens = Number(
+    latestStep?.payload.estimatedTokens ??
+      latestUsage?.payload.promptTokens ??
+      0,
+  );
+  const contextCeiling = Number(latestStep?.payload.ceiling ?? 0);
 
   return (
     <div className="run-console">
@@ -468,7 +492,26 @@ export function RunConsole({
             <span>·</span>
             <span>{elapsed(run, now)}</span>
             <span>·</span>
-            <span>{run.totalTokens.toLocaleString()} tokens</span>
+            <span title="Cumulative tokens billed across every model call">
+              {run.totalTokens.toLocaleString()} billed
+            </span>
+            {contextTokens > 0 ? (
+              <>
+                <span>·</span>
+                <span
+                  title={
+                    contextCeiling > 0
+                      ? `Latest prompt estimate, automatic compaction ceiling ${contextCeiling.toLocaleString()}`
+                      : "Latest prompt estimate"
+                  }
+                >
+                  {contextTokens.toLocaleString()} context
+                  {contextCeiling > 0
+                    ? ` / ${contextCeiling.toLocaleString()}`
+                    : ""}
+                </span>
+              </>
+            ) : null}
             <span>·</span>
             <span>
               {findings.length} issue{findings.length === 1 ? "" : "s"}
@@ -478,7 +521,7 @@ export function RunConsole({
               {hypotheses.length} hypothes
               {hypotheses.length === 1 ? "is" : "es"}
             </span>
-            {run.rerunOf ? <span>· rerun</span> : null}
+            {run.rerunOf ? <span>· continued</span> : null}
           </div>
           <div className="run-actions">
             {!running ? (
@@ -565,6 +608,24 @@ export function RunConsole({
             <div className="agent-status">
               <AgentMark size={12} />
               <span>agent executing</span>
+            </div>
+          ) : null}
+
+          {run.status === "completed" ? (
+            <div className="continue-bar">
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={rerunning}
+                onClick={() => void rerun()}
+              >
+                <Play size={14} strokeWidth={1.5} aria-hidden="true" />
+                Continue
+              </Button>
+              <span className="hint">
+                Resume the analysis from this checkpoint with every hypothesis
+                and finding already recorded.
+              </span>
             </div>
           ) : null}
         </div>

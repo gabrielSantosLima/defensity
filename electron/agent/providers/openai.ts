@@ -54,6 +54,9 @@ export function createOpenAiProvider(config: ProviderConfig): ChatProvider {
         stream: true,
         stream_options: { include_usage: true },
       };
+      if (request.tools.length === 0) {
+        delete (body as { tools?: unknown }).tools;
+      }
 
       const response = await providerFetch(
         `${config.baseUrl}/chat/completions`,
@@ -114,10 +117,13 @@ export function createOpenAiProvider(config: ProviderConfig): ChatProvider {
           calls.set(call.index, slot);
         }
         if (chunk.usage) {
+          const promptTokens = chunk.usage.prompt_tokens ?? 0;
+          const completionTokens = chunk.usage.completion_tokens ?? 0;
           usage = {
-            promptTokens: chunk.usage.prompt_tokens ?? 0,
-            completionTokens: chunk.usage.completion_tokens ?? 0,
-            totalTokens: chunk.usage.total_tokens ?? 0,
+            promptTokens,
+            completionTokens,
+            totalTokens:
+              chunk.usage.total_tokens ?? promptTokens + completionTokens,
           };
         }
       }

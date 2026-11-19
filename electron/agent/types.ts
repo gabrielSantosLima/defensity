@@ -12,10 +12,33 @@ export interface AgentToolCall {
 }
 
 export interface AgentMessage {
+  id?: string;
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   toolCalls?: AgentToolCall[];
   toolCallId?: string;
+  /** Marks pinned messages so compaction can preserve them. */
+  kind?: "task" | "checkpoint";
+  /** The summary text held by a checkpoint message. */
+  checkpoint?: string;
+}
+
+export interface AgentHypothesis {
+  statement: string;
+  class: string;
+  impact: number;
+  plausibility: number;
+  rationale: string;
+  evidence: string;
+  proposedTest: string | null;
+}
+
+export interface AgentFinding {
+  title: string;
+  severity: string;
+  class: string;
+  evidence: string;
+  validator: string;
 }
 
 export interface AgentTool {
@@ -73,9 +96,10 @@ export interface AgentStartPayload {
   apiKey: string;
   baseUrl: string;
   workspace: AgentWorkspace;
-  limits: { maxToolResultChars: number; budget: number; maxTokens: number };
+  limits: { maxToolResultChars: number };
   seed?: string;
-  knownFindingTitles?: string[];
+  knownHypotheses?: AgentHypothesis[];
+  knownFindings?: AgentFinding[];
   dockerHost?: string;
   allowInvalidCertificates: boolean;
 }

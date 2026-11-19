@@ -1,6 +1,8 @@
 import path from "node:path";
 import { utilityProcess } from "electron";
 import type {
+  AgentFinding,
+  AgentHypothesis,
   AgentInbound,
   AgentOutbound,
   AgentStartPayload as WireStartPayload,
@@ -36,9 +38,10 @@ export interface AgentStartPayload {
   };
   apiKey: string;
   baseUrl: string;
-  limits: { maxToolResultChars: number; budget: number; maxTokens: number };
+  limits: { maxToolResultChars: number };
   seed?: string;
-  knownFindingTitles: string[];
+  knownHypotheses?: AgentHypothesis[];
+  knownFindings?: AgentFinding[];
   dockerHost: string;
   allowInvalidCertificates: boolean;
 }
@@ -72,7 +75,8 @@ export function createAgentService(handlers: AgentHandlers): AgentService {
         workspace: payload.workspace as WireStartPayload["workspace"],
         limits: payload.limits,
         seed: payload.seed,
-        knownFindingTitles: payload.knownFindingTitles,
+        knownHypotheses: payload.knownHypotheses,
+        knownFindings: payload.knownFindings,
         dockerHost: payload.dockerHost,
         allowInvalidCertificates: payload.allowInvalidCertificates,
       };

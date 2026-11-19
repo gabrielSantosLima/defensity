@@ -77,6 +77,13 @@ export function buildConversationTranscript(events: RunEvent[]): string {
         String(event.payload.title ?? ""),
         300,
       )}`;
+    } else if (event.type === "compaction") {
+      const summary = clip(String(event.payload.summary ?? ""), 500);
+      if (summary) {
+        line = `context checkpoint [${String(
+          event.payload.mode ?? "auto",
+        )}]: ${summary}`;
+      }
     }
 
     if (!line) {
@@ -101,6 +108,8 @@ export interface RunContextInput {
   /** Set when the run was started from a previous run. */
   sourceRun?: Run | null;
   sourceEvents?: RunEvent[];
+  /** The summary of the source run's latest completed compaction. */
+  checkpoint?: string | null;
 }
 
 /**
@@ -135,6 +144,10 @@ export function buildRunContext(input: RunContextInput): string | undefined {
         ),
       ].join("\n"),
     );
+  }
+
+  if (input.checkpoint) {
+    sections.push(`Latest context checkpoint from the source run:\n${input.checkpoint}`);
   }
 
   if (input.sourceRun) {

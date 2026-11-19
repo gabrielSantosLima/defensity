@@ -215,8 +215,6 @@ export interface WorkspaceInput {
 }
 
 export interface Settings {
-  compactionBudget: number;
-  runTokenBudget: number;
   dockerHost: string;
   compatibleBaseUrl: string;
   allowInvalidCertificates: boolean;
@@ -241,7 +239,7 @@ export interface DefensityApi {
   getSettings: () => Promise<Settings>;
   saveSettings: (
     patch: Partial<
-      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl" | "allowInvalidCertificates" | "closeToTray">
+      Pick<Settings, "dockerHost" | "compatibleBaseUrl" | "allowInvalidCertificates" | "closeToTray">
     >,
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;

@@ -5,6 +5,7 @@ import { fsGrepTool } from "./fsGrep";
 import { fsListTool } from "./fsList";
 import { fsReadTool } from "./fsRead";
 import { findingRecordTool } from "./findingRecord";
+import { hypothesisListTool } from "./hypothesisList";
 import { hypothesisRecordTool } from "./hypothesisRecord";
 import { loadRunTool } from "./loadRun";
 import type { Tool, ToolContext, ToolResult } from "./types";
@@ -19,12 +20,14 @@ const TOOLS: Tool[] = [
   depsScanTool,
   probeRunTool,
   loadRunTool,
+  hypothesisListTool,
   hypothesisRecordTool,
   findingRecordTool,
 ];
 
 export interface Toolset {
   definitions: AgentTool[];
+  context: ToolContext;
   execute(name: string, args: Record<string, unknown>): Promise<ToolResult>;
 }
 
@@ -38,6 +41,7 @@ export function createToolset(context: ToolContext): Toolset {
 
   return {
     definitions: TOOLS.map((tool) => tool.definition),
+    context: scopedContext,
 
     async execute(name, args) {
       const tool = TOOLS.find((entry) => entry.definition.name === name);

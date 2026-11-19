@@ -76,7 +76,9 @@ export function createGeminiProvider(config: ProviderConfig): ChatProvider {
       const converted = toContents(request.messages);
       const body: Record<string, unknown> = {
         contents: converted.contents,
-        tools: [
+      };
+      if (request.tools.length > 0) {
+        body.tools = [
           {
             functionDeclarations: request.tools.map((tool) => ({
               name: tool.name,
@@ -84,8 +86,8 @@ export function createGeminiProvider(config: ProviderConfig): ChatProvider {
               parameters: tool.parameters,
             })),
           },
-        ],
-      };
+        ];
+      }
       if (converted.system) {
         body.systemInstruction = { parts: [{ text: converted.system }] };
       }
@@ -132,10 +134,15 @@ export function createGeminiProvider(config: ProviderConfig): ChatProvider {
         }
 
         if (chunk.usageMetadata) {
+          const promptTokens = chunk.usageMetadata.promptTokenCount ?? 0;
+          const completionTokens =
+            chunk.usageMetadata.candidatesTokenCount ?? 0;
           usage = {
-            promptTokens: chunk.usageMetadata.promptTokenCount ?? 0,
-            completionTokens: chunk.usageMetadata.candidatesTokenCount ?? 0,
-            totalTokens: chunk.usageMetadata.totalTokenCount ?? 0,
+            promptTokens,
+            completionTokens,
+            totalTokens:
+              chunk.usageMetadata.totalTokenCount ??
+              promptTokens + completionTokens,
           };
         }
       }
