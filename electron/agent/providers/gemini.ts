@@ -7,7 +7,7 @@ import type {
   ProviderConfig,
   Usage,
 } from "../types";
-import { assertOk, sseData } from "./sse";
+import { providerFetch, sseData } from "./sse";
 
 interface GeminiPart {
   text?: string;
@@ -90,7 +90,7 @@ export function createGeminiProvider(config: ProviderConfig): ChatProvider {
         body.systemInstruction = { parts: [{ text: converted.system }] };
       }
 
-      const response = await fetch(
+      const response = await providerFetch(
         `${config.baseUrl}/v1beta/models/${encodeURIComponent(config.model)}:streamGenerateContent?alt=sse`,
         {
           method: "POST",
@@ -99,10 +99,10 @@ export function createGeminiProvider(config: ProviderConfig): ChatProvider {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
-          signal: request.signal,
         },
+        "Gemini",
+        request.signal,
       );
-      await assertOk(response, "Gemini");
 
       let text = "";
       let usage: Usage | null = null;

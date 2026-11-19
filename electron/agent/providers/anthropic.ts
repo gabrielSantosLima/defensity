@@ -7,7 +7,7 @@ import type {
   ProviderConfig,
   Usage,
 } from "../types";
-import { assertOk, sseData } from "./sse";
+import { providerFetch, sseData } from "./sse";
 
 type AnthropicBlock =
   | { type: "text"; text: string }
@@ -97,17 +97,20 @@ export function createAnthropicProvider(config: ProviderConfig): ChatProvider {
         body.system = converted.system;
       }
 
-      const response = await fetch(`${config.baseUrl}/v1/messages`, {
-        method: "POST",
-        headers: {
-          "x-api-key": config.apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
+      const response = await providerFetch(
+        `${config.baseUrl}/v1/messages`,
+        {
+          method: "POST",
+          headers: {
+            "x-api-key": config.apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-        signal: request.signal,
-      });
-      await assertOk(response, "Anthropic");
+        "Anthropic",
+        request.signal,
+      );
 
       let text = "";
       let promptTokens = 0;

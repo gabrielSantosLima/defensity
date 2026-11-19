@@ -23,6 +23,9 @@ const { probeRunTool } = require(
 const { createSandboxService } = require(
   "../dist/main/electron/services/sandboxService.js",
 );
+const { sseData } = require(
+  "../dist/main/electron/agent/providers/sse.js",
+);
 const { openDatabase } = require(
   "../dist/main/electron/services/db/database.js",
 );
@@ -393,6 +396,21 @@ test("close to tray is enabled by default and can be disabled", () => {
     normalizeEngineSettings({ closeToTray: false }).closeToTray,
     false,
   );
+});
+
+test("sseData aborts a provider stream that stops sending data", async () => {
+  const stream = new ReadableStream({
+    start() {
+      // Keep the stream open without producing data.
+    },
+  });
+  const response = new Response(stream);
+
+  await assert.rejects(async () => {
+    for await (const _chunk of sseData(response, 50)) {
+      // No chunks are expected.
+    }
+  }, /stopped streaming for 50ms/);
 });
 
 test("sandbox status has a stable shape and preflight matches it", () => {

@@ -7,7 +7,7 @@ import type {
   AgentToolCall,
   Usage,
 } from "../types";
-import { assertOk, sseData } from "./sse";
+import { providerFetch, sseData } from "./sse";
 
 interface OpenAiDeltaCall {
   index: number;
@@ -55,16 +55,19 @@ export function createOpenAiProvider(config: ProviderConfig): ChatProvider {
         stream_options: { include_usage: true },
       };
 
-      const response = await fetch(`${config.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.apiKey}`,
-          "Content-Type": "application/json",
+      const response = await providerFetch(
+        `${config.baseUrl}/chat/completions`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${config.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-        signal: request.signal,
-      });
-      await assertOk(response, config.provider);
+        "OpenAI",
+        request.signal,
+      );
 
       let text = "";
       const calls = new Map<number, OpenAiDeltaCall>();

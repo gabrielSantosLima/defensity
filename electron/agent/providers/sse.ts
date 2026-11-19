@@ -1,4 +1,10 @@
-export async function* sseData(response: Response): AsyncGenerator<string> {
+export const PROVIDER_RESPONSE_TIMEOUT_MS = 60_000;
+export const PROVIDER_IDLE_TIMEOUT_MS = 90_000;
+
+export async function* sseData(
+  response: Response,
+  idleTimeoutMs = PROVIDER_IDLE_TIMEOUT_MS,
+): AsyncGenerator<string> {
   if (!response.body) {
     throw new Error("The provider returned an empty stream");
   }
@@ -7,7 +13,33 @@ export async function* sseData(response: Response): AsyncGenerator<string> {
   let buffer = "";
 
   while (true) {
-    const { value, done } = await reader.read();
+    let result: Awaited<ReturnType<typeof reader.read>>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      result = await Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `The provider stopped streaming for ${idleTimeoutMs >= 1000 ? `${Math.round(idleTimeoutMs / 1000)}s` : `${idleTimeoutMs}ms`}. The run was aborted.`,
+                ),
+              ),
+            idleTimeoutMs,
+          );
+        }),
+      ]);
+    } catch (error) {
+      await reader.cancel().catch(() => undefined);
+      throw error;
+    } finally {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    }
+
+    const { value, done } = result;
     if (done) {
       break;
     }
@@ -45,6 +77,48 @@ export async function assertOk(
   throw new Error(
     `${provider} refused the request (HTTP ${response.status})${detail ? `: ${detail}` : ""}`,
   );
+}
+
+/**
+ * Runs the request and waits for the response headers with a hard timeout. The
+ * stream itself is covered by the idle timeout in sseData.
+ */
+export async function providerFetch(
+  url: string,
+  init: RequestInit,
+  provider: string,
+  parent: AbortSignal,
+  timeoutMs = PROVIDER_RESPONSE_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const abort = () => controller.abort();
+  if (parent.aborted) {
+    controller.abort();
+  } else {
+    parent.addEventListener("abort", abort, { once: true });
+  }
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  timer.unref?.();
+
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    await assertOk(response, provider);
+    return response;
+  } catch (error) {
+    if (timedOut && !parent.aborted) {
+      throw new Error(
+        `${provider} did not respond within ${Math.round(timeoutMs / 1000)}s. The run was aborted.`,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    parent.removeEventListener("abort", abort);
+  }
 }
 
 export function estimateUsage(text: string): {

@@ -452,9 +452,6 @@ export function RunConsole({
         ),
     ),
   );
-  const lastGroup = [...blocks]
-    .reverse()
-    .find((block) => block.type === "group");
 
   return (
     <div className="run-console">
@@ -541,10 +538,9 @@ export function RunConsole({
             const names = [
               ...new Set(calls.map((event) => String(event.payload.name))),
             ];
-            const open = running && block === lastGroup;
 
             return (
-              <details className="exec" key={block.key} open={open}>
+              <details className="exec" key={block.key}>
                 <summary className="exec-summary">
                   <span className="exec-title">
                     {calls.length} tool call{calls.length === 1 ? "" : "s"}
