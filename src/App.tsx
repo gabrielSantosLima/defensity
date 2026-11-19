@@ -12,6 +12,7 @@ import { Button } from "./components/Button";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { errorMessage } from "./lib/format";
 import { SettingsPage } from "./pages/SettingsPage";
+import { EditWorkspacePage } from "./pages/EditWorkspacePage";
 import { WorkspaceDetail } from "./pages/WorkspaceDetail";
 import { WorkspaceForm } from "./pages/WorkspaceForm";
 import { RunConsole } from "./pages/RunConsole";
@@ -290,6 +291,27 @@ export function App() {
                 onEdit={() =>
                   navigate({ name: "edit", id: view.id, title: view.title })
                 }
+              />
+            ) : null}
+
+            {view.name === "edit" ? (
+              <EditWorkspacePage
+                id={view.id}
+                onCancel={() =>
+                  navigate({
+                    name: "workspace",
+                    id: view.id,
+                    title: view.title,
+                  })
+                }
+                onSaved={(workspace) => {
+                  void refresh();
+                  navigate({
+                    name: "workspace",
+                    id: workspace.id,
+                    title: workspace.name,
+                  });
+                }}
               />
             ) : null}
 
