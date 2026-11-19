@@ -11,8 +11,11 @@ export function registerSettingsHandlers(useCases: AppUseCases): void {
       _event,
       patch: {
         compactionBudget?: number;
+        runTokenBudget?: number;
         dockerHost?: string;
         compatibleBaseUrl?: string;
+        allowInvalidCertificates?: boolean;
+        closeToTray?: boolean;
       },
     ) => {
       useCases.saveSettings.execute(patch);

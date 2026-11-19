@@ -80,6 +80,7 @@ export const loadRunTool: Tool = {
       ],
       (duration + 180) * 1000,
       name,
+      context.dockerHost,
     );
 
     if (result.timedOut) {

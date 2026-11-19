@@ -213,7 +213,7 @@ export function App() {
             ) : null}
           </header>
 
-          <div className="content">
+          <div className={view.name === "run" ? "content content--run" : "content"}>
             {error ? (
               <div className="alert" style={{ marginBottom: 14 }}>
                 {error}
@@ -257,6 +257,11 @@ export function App() {
                   void refresh();
                   navigate({ name: "workspaces" });
                 }}
+                onDeleted={() => {
+                  void refresh();
+                  navigate({ name: "workspaces" });
+                }}
+                onOpenSettings={() => navigate({ name: "settings" })}
                 onRun={(run: Run) =>
                   navigate({
                     name: "run",
@@ -281,6 +286,7 @@ export function App() {
 
             {view.name === "run" ? (
               <RunConsole
+                key={view.id}
                 runId={view.id}
                 workspaceName={view.workspaceName}
                 onRerun={(nextRunId) =>

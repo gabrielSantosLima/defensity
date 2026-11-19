@@ -38,6 +38,8 @@ export interface AgentStartPayload {
   baseUrl: string;
   limits: { maxToolResultChars: number; budget: number; maxTokens: number };
   seed?: string;
+  knownFindingTitles: string[];
+  dockerHost: string;
   allowInvalidCertificates: boolean;
 }
 
@@ -70,6 +72,8 @@ export function createAgentService(handlers: AgentHandlers): AgentService {
         workspace: payload.workspace as WireStartPayload["workspace"],
         limits: payload.limits,
         seed: payload.seed,
+        knownFindingTitles: payload.knownFindingTitles,
+        dockerHost: payload.dockerHost,
         allowInvalidCertificates: payload.allowInvalidCertificates,
       };
 

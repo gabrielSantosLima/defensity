@@ -14,6 +14,7 @@ export class SaveEngineSettingsUseCase {
     dockerHost?: string;
     compatibleBaseUrl?: string;
     allowInvalidCertificates?: boolean;
+    closeToTray?: boolean;
   }): EngineSettings {
     assertEnginePatch(patch);
     const current = this.settings.get();

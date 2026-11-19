@@ -10,6 +10,7 @@ import type { SandboxService } from "../../services/sandboxService";
 import type { SecretService } from "../../services/secretService";
 import type { SettingsService } from "../../services/settingsService";
 import type { WorkspaceService } from "../../services/workspaceService";
+import { buildRunContext } from "./runContext";
 
 interface Deps {
   workspaces: WorkspaceService;
@@ -81,7 +82,11 @@ export class StartRunUseCase {
       throw new Error("A run is already active for this workspace");
     }
 
-    this.sandbox.preflight();
+    // Only web workspaces need the validation sandbox at run start. Static
+    // library and Android analysis run without containers.
+    if (workspace.type === "web") {
+      this.sandbox.preflight();
+    }
 
     const baseUrl = baseUrlFor(
       workspace.provider,
@@ -91,14 +96,24 @@ export class StartRunUseCase {
       throw new Error("Set the base URL for the OpenAI-compatible provider");
     }
 
-    let seed: string | undefined;
+    const knownIssues = this.findings.listByWorkspace(workspace.id);
+    let sourceRun: Run | null = null;
+    let sourceEvents: ReturnType<RunService["listEvents"]> = [];
     if (options?.rerunOf) {
       const previous = this.runs.get(options.rerunOf);
       if (!previous || previous.workspaceId !== workspaceId) {
         throw new Error("Previous run not found for this workspace");
       }
-      seed = this.buildSeed(previous);
+      sourceRun = previous;
+      sourceEvents = this.runs.listEvents(previous.id);
     }
+
+    const seed = buildRunContext({
+      issues: knownIssues,
+      hypotheses: this.hypotheses.listByWorkspace(workspace.id),
+      sourceRun,
+      sourceEvents,
+    });
 
     const run = createRunRecord({
       id: this.ids.newId(),
@@ -126,6 +141,8 @@ export class StartRunUseCase {
       apiKey,
       baseUrl,
       seed,
+      knownFindingTitles: knownIssues.map((finding) => finding.title),
+      dockerHost: this.settings.get().dockerHost,
       allowInvalidCertificates:
         this.settings.get().allowInvalidCertificates,
       limits: {
@@ -136,44 +153,5 @@ export class StartRunUseCase {
     });
 
     return run;
-  }
-
-  private buildSeed(previous: Run): string {
-    const events = this.runs.listEvents(previous.id);
-    const hypotheses = this.hypotheses.listByRun(previous.id);
-    const findings = this.findings.listByRun(previous.id);
-    const lines = [
-      `Previous run ${previous.id} ended as ${previous.status} after ${previous.stepCount} steps and ${previous.totalTokens} tokens.`,
-    ];
-
-    if (hypotheses.length > 0) {
-      lines.push("Hypotheses recorded:");
-      for (const hypothesis of hypotheses.slice(0, 12)) {
-        lines.push(
-          `- [${hypothesis.class} ${hypothesis.impact * hypothesis.plausibility}/25] ${hypothesis.statement} (evidence: ${hypothesis.evidence.slice(0, 160)})`,
-        );
-      }
-    }
-
-    if (findings.length > 0) {
-      lines.push("Validated findings:");
-      for (const finding of findings.slice(0, 12)) {
-        lines.push(
-          `- [${finding.severity}] ${finding.title} (validator: ${finding.validator})`,
-        );
-      }
-    }
-
-    const lastSummary = [...events]
-      .reverse()
-      .find((event) => event.type === "assistant.message");
-    if (lastSummary) {
-      lines.push(
-        "Last assistant summary:",
-        String(lastSummary.payload.text ?? "").slice(0, 1500),
-      );
-    }
-
-    return lines.join("\n");
   }
 }

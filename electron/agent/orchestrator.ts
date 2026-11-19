@@ -21,10 +21,14 @@ Rules:
 - probe_run sends bounded HTTP requests from the sandbox and load_run runs a
   Gatling scenario. Use them only against the workspace target.
 - Record every candidate weakness with hypothesis_record before finishing.
+- Each run starts with a clean hypothesis list. Use hypotheses from the workspace
+  context as background, but do not repeat one unless you have new evidence.
 - After a validator confirms a weakness, record it with finding_record and cite
   the validator and its evidence. Severity: critical when reachable from
   untrusted input with high impact, high when reachable with a precondition,
   medium when configuration or a role is required, low otherwise.
+- Issues already listed in the workspace context are registered. Never record
+  them again; only record a validated vulnerability that does not exist yet.
 - A hypothesis needs evidence from a tool result: a file:line, a request/response
   or a dependency with its version. Never record one from intuition alone.
 - Rank honestly: impact and plausibility from 1 to 5.
@@ -77,11 +81,11 @@ ${task}
 Finish with a short summary of what you inspected and how many hypotheses you
 recorded.${payload.seed ? `
 
-[previous run context]
+[workspace context]
 ${payload.seed}
 
-Reuse what is still valid, but verify it before trusting. Do not repeat a tool
-call whose result is already in the context.` : ""}`;
+Use this context to avoid duplicate work. Verify what is still valid before
+trusting it, and do not repeat a tool call whose result is already in the context.` : ""}`;
 }
 
 const ZERO: Usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
@@ -97,6 +101,8 @@ export async function runAgent(
     targetUrl: payload.workspace.targetUrl,
     libraryArtifactPath: payload.workspace.libraryArtifactPath,
     allowInvalidCertificates: payload.allowInvalidCertificates,
+    dockerHost: payload.dockerHost ?? "",
+    knownFindingTitles: new Set(payload.knownFindingTitles ?? []),
   });
   const provider = createProvider({
     provider: payload.provider,

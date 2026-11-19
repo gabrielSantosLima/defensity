@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type WheelEvent,
+} from "react";
+import { ArrowDown } from "lucide-react";
 import type {
   Finding,
   Hypothesis,
@@ -80,7 +88,11 @@ export function RunConsole({
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
   const [rerunning, setRerunning] = useState(false);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const [pinned, setPinned] = useState(true);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+  const pinnedRef = useRef(true);
+  const followFrameRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -141,8 +153,122 @@ export function RunConsole({
   }, [run?.status, refresh]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [events.length, live]);
+    pinnedRef.current = true;
+    setPinned(true);
+    setLive("");
+    setError(null);
+  }, [runId]);
+
+  const stopFollow = useCallback(() => {
+    if (followFrameRef.current !== null) {
+      window.cancelAnimationFrame(followFrameRef.current);
+      followFrameRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Eases the viewport toward the end of the conversation instead of assigning
+   * scrollTop in one jump. It runs while the content grows, so streamed text
+   * and tool results scroll smoothly with the chat.
+   */
+  const followEnd = useCallback(() => {
+    if (!pinnedRef.current || followFrameRef.current !== null) {
+      return;
+    }
+
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    const step = () => {
+      followFrameRef.current = null;
+      const scroller = scrollerRef.current;
+      if (!scroller || !pinnedRef.current) {
+        return;
+      }
+      const target = scroller.scrollHeight - scroller.clientHeight;
+      const distance = target - scroller.scrollTop;
+      if (distance <= 0.5) {
+        return;
+      }
+      const increment = reduced
+        ? distance
+        : Math.min(distance, Math.max(1.5, distance * 0.2));
+      scroller.scrollTop = Math.min(target, scroller.scrollTop + increment);
+      followFrameRef.current = window.requestAnimationFrame(step);
+    };
+
+    followFrameRef.current = window.requestAnimationFrame(step);
+  }, []);
+
+  useEffect(() => {
+    if (pinnedRef.current) {
+      followEnd();
+    }
+  }, [events.length, live, hypotheses.length, findings.length, followEnd]);
+
+  useEffect(() => {
+    const node = timelineRef.current;
+    if (!node) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      if (pinnedRef.current) {
+        followEnd();
+      }
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [run?.id, followEnd]);
+
+  useEffect(() => stopFollow, [stopFollow]);
+
+  function handleScroll() {
+    if (followFrameRef.current !== null) {
+      return;
+    }
+    const scroller = scrollerRef.current;
+    if (!scroller) {
+      return;
+    }
+    const atBottom =
+      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= 96;
+    // Only re-attach on scroll. Detaching is driven by user gestures
+    // (wheel up, scrollbar drag), so layout shifts cannot unpin the timeline.
+    if (atBottom && !pinnedRef.current) {
+      pinnedRef.current = true;
+      setPinned(true);
+    }
+  }
+
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    if (event.deltaY >= 0) {
+      return;
+    }
+    stopFollow();
+    if (pinnedRef.current) {
+      pinnedRef.current = false;
+      setPinned(false);
+    }
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    // A pointer down on the scroller itself is a scrollbar interaction. Clicks
+    // inside the conversation keep following the stream.
+    if (event.target !== scrollerRef.current) {
+      return;
+    }
+    stopFollow();
+    pinnedRef.current = false;
+    setPinned(false);
+  }
+
+  function scrollToLatest() {
+    pinnedRef.current = true;
+    setPinned(true);
+    stopFollow();
+    followEnd();
+  }
 
   async function cancel() {
     try {
@@ -227,6 +353,7 @@ export function RunConsole({
     }
     if (event.type === "finding") {
       const severity = String(event.payload.severity ?? "low");
+      const duplicate = event.payload.duplicate === true;
       return (
         <div className={`tl-finding tl-finding--${severity}`} key={event.id}>
           <div className="tl-finding-head">
@@ -234,6 +361,9 @@ export function RunConsole({
             <span className="tl-finding-validator">
               via {String(event.payload.validator ?? "unknown")}
             </span>
+            {duplicate ? (
+              <span className="chip chip--muted">already registered</span>
+            ) : null}
           </div>
           <p className="tl-finding-title">
             {String(event.payload.title ?? "")}
@@ -327,7 +457,7 @@ export function RunConsole({
     .find((block) => block.type === "group");
 
   return (
-    <>
+    <div className="run-console">
       <header className="run-head">
         <div className="run-head-inner">
           <div className="run-identity">
@@ -383,12 +513,19 @@ export function RunConsole({
         </div>
       </header>
 
-      <div className="page run-page">
+      <div
+        className="run-scroll"
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
+      >
+        <div className="page run-page">
 
       {error ? <div className="alert">{error}</div> : null}
 
       <Panel title="Timeline" meta={`${run.stepCount || 0} steps`}>
-        <div className="timeline">
+        <div className="timeline" ref={timelineRef}>
           {events.length === 0 && !live ? (
             <p className="hint">Waiting for the agent to report its first step…</p>
           ) : null}
@@ -434,7 +571,6 @@ export function RunConsole({
               <span>agent executing</span>
             </div>
           ) : null}
-          <div ref={endRef} />
         </div>
       </Panel>
 
@@ -469,7 +605,20 @@ export function RunConsole({
           </div>
         </div>
       ) : null}
+        </div>
       </div>
-    </>
+
+      {!pinned && events.length > 0 ? (
+        <button
+          type="button"
+          className="jump-latest"
+          aria-label="Jump to latest"
+          title="Jump to latest"
+          onClick={scrollToLatest}
+        >
+          <ArrowDown size={16} strokeWidth={1.5} aria-hidden="true" />
+        </button>
+      ) : null}
+    </div>
   );
 }

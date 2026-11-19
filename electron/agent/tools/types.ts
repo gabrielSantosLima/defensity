@@ -3,6 +3,9 @@ export interface ToolContext {
   targetUrl: string | null;
   libraryArtifactPath: string | null;
   allowInvalidCertificates: boolean;
+  dockerHost: string;
+  /** Normalized titles of issues already registered in this workspace. */
+  knownFindingTitles: Set<string>;
 }
 
 export interface ToolResult {

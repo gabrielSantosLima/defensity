@@ -9,6 +9,8 @@ import type { SaveEngineSettingsUseCase } from "../useCases/settings/saveEngineS
 import type { ClearProviderKeyUseCase } from "../useCases/providers/clearProviderKey";
 import type { ListModelsUseCase } from "../useCases/providers/listModels";
 import type { SetProviderKeyUseCase } from "../useCases/providers/setProviderKey";
+import type { BuildSandboxImagesUseCase } from "../useCases/sandbox/buildSandboxImages";
+import type { GetSandboxStatusUseCase } from "../useCases/sandbox/getSandboxStatus";
 import type { CancelRunUseCase } from "../useCases/runs/cancelRun";
 import type { GetRunUseCase } from "../useCases/runs/getRun";
 import type { GenerateReportUseCase } from "../useCases/runs/generateReport";
@@ -44,4 +46,6 @@ export interface AppUseCases {
   listFindings: ListFindingsUseCase;
   listWorkspaceIssues: ListWorkspaceIssuesUseCase;
   generateReport: GenerateReportUseCase;
+  getSandboxStatus: GetSandboxStatusUseCase;
+  buildSandboxImages: BuildSandboxImagesUseCase;
 }

@@ -159,6 +159,25 @@ export interface ModelInfo {
   name: string;
 }
 
+export interface SandboxImage {
+  tag: string;
+  present: boolean;
+}
+
+export interface SandboxStatus {
+  dockerAvailable: boolean;
+  version: string | null;
+  ready: boolean;
+  images: SandboxImage[];
+  error: string | null;
+}
+
+export interface SandboxBuildResult {
+  ok: boolean;
+  error: string | null;
+  status: SandboxStatus;
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -201,6 +220,7 @@ export interface Settings {
   dockerHost: string;
   compatibleBaseUrl: string;
   allowInvalidCertificates: boolean;
+  closeToTray: boolean;
   providerKeys: Record<ProviderId, boolean>;
 }
 
@@ -221,7 +241,7 @@ export interface DefensityApi {
   getSettings: () => Promise<Settings>;
   saveSettings: (
     patch: Partial<
-      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl" | "allowInvalidCertificates">
+      Pick<Settings, "compactionBudget" | "runTokenBudget" | "dockerHost" | "compatibleBaseUrl" | "allowInvalidCertificates" | "closeToTray">
     >,
   ) => Promise<Settings>;
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
@@ -238,6 +258,9 @@ export interface DefensityApi {
   listWorkspaceIssues: (workspaceId: string) => Promise<Finding[]>;
   generateReport: (runId: string) => Promise<string>;
   saveReport: (runId: string) => Promise<string | null>;
+  getSandboxStatus: () => Promise<SandboxStatus>;
+  buildSandboxImages: () => Promise<SandboxBuildResult>;
+  onSandboxProgress: (listener: (chunk: string) => void) => () => void;
   onRunUpdate: (listener: (update: RunUpdate) => void) => () => void;
   setProviderKey: (provider: ProviderId, key: string) => Promise<void>;
   clearProviderKey: (provider: ProviderId) => Promise<void>;

@@ -92,6 +92,7 @@ export const probeRunTool: Tool = {
       ],
       60000,
       name,
+      context.dockerHost,
     );
 
     if (result.timedOut) {

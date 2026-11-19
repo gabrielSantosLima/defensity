@@ -75,6 +75,8 @@ export interface AgentStartPayload {
   workspace: AgentWorkspace;
   limits: { maxToolResultChars: number; budget: number; maxTokens: number };
   seed?: string;
+  knownFindingTitles?: string[];
+  dockerHost?: string;
   allowInvalidCertificates: boolean;
 }
 

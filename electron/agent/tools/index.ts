@@ -1,4 +1,5 @@
 import type { AgentTool } from "../types";
+import { normalizeFindingTitle } from "../../../shared/findings";
 import { depsScanTool } from "./depsScan";
 import { fsGrepTool } from "./fsGrep";
 import { fsListTool } from "./fsList";
@@ -28,6 +29,13 @@ export interface Toolset {
 }
 
 export function createToolset(context: ToolContext): Toolset {
+  const scopedContext: ToolContext = {
+    ...context,
+    knownFindingTitles: new Set(
+      [...context.knownFindingTitles].map(normalizeFindingTitle),
+    ),
+  };
+
   return {
     definitions: TOOLS.map((tool) => tool.definition),
 
@@ -38,7 +46,7 @@ export function createToolset(context: ToolContext): Toolset {
       }
 
       try {
-        return await tool.execute(args, context);
+        return await tool.execute(args, scopedContext);
       } catch (error) {
         return {
           ok: false,

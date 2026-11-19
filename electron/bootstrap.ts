@@ -6,6 +6,8 @@ import {
   nativeTheme,
   Notification,
   safeStorage,
+  Tray,
+  type MenuItemConstructorOptions,
 } from "electron";
 import type { RunUpdate } from "../shared/types";
 import { registerIpc } from "./ipc";
@@ -39,6 +41,8 @@ import { RecoverRunsUseCase } from "./useCases/runs/recoverRuns";
 import { ClearRunHistoryUseCase } from "./useCases/runs/clearRunHistory";
 import { RerunRunUseCase } from "./useCases/runs/rerunRun";
 import { StartRunUseCase } from "./useCases/runs/startRun";
+import { BuildSandboxImagesUseCase } from "./useCases/sandbox/buildSandboxImages";
+import { GetSandboxStatusUseCase } from "./useCases/sandbox/getSandboxStatus";
 import { GetSettingsUseCase } from "./useCases/settings/getSettings";
 import { SaveEngineSettingsUseCase } from "./useCases/settings/saveEngineSettings";
 import { ArchiveWorkspaceUseCase } from "./useCases/workspaces/archiveWorkspace";
@@ -59,6 +63,7 @@ function broadcast(update: RunUpdate): void {
 
 function compose(userData: string): {
   useCases: AppUseCases;
+  activeRunsLabel: () => string;
   dispose: () => void;
 } {
   const database = openDatabase(path.join(userData, "defensity.db"));
@@ -78,7 +83,12 @@ function compose(userData: string): {
     cipher,
   );
   const providers = createProviderService();
-  const sandbox = createSandboxService();
+  const sandbox = createSandboxService({
+    dockerRoot: app.isPackaged
+      ? path.join(process.resourcesPath, "docker")
+      : path.join(app.getAppPath(), "docker"),
+    dockerHost: () => settingsService.get().dockerHost,
+  });
   const hypotheses = createHypothesisService(database);
   const findings = createFindingService(database);
 
@@ -191,6 +201,8 @@ function compose(userData: string): {
       findings,
       hypotheses,
     }),
+    getSandboxStatus: new GetSandboxStatusUseCase(sandbox),
+    buildSandboxImages: new BuildSandboxImagesUseCase(sandbox),
   };
 
   new RecoverRunsUseCase({
@@ -199,7 +211,22 @@ function compose(userData: string): {
     ids: systemIds,
   }).execute();
 
-  return { useCases, dispose: () => agent.dispose() };
+  return {
+    useCases,
+    activeRunsLabel: () => {
+      const active = runs.listActive();
+      if (active.length === 0) {
+        return "No active runs";
+      }
+      if (active.length > 1) {
+        return `${active.length} active runs`;
+      }
+      const [run] = active;
+      const workspace = workspaces.get(run.workspaceId);
+      return `${workspace?.name ?? "Run"} · ${run.status}`;
+    },
+    dispose: () => agent.dispose(),
+  };
 }
 
 function focusExistingWindow(): void {
@@ -209,6 +236,9 @@ function focusExistingWindow(): void {
   }
   if (window.isMinimized()) {
     window.restore();
+  }
+  if (!window.isVisible()) {
+    window.show();
   }
   window.focus();
 }
@@ -220,6 +250,13 @@ if (!hasLock) {
 } else {
   app.on("second-instance", focusExistingWindow);
 
+  let tray: Tray | null = null;
+  let quitting = false;
+
+  app.on("before-quit", () => {
+    quitting = true;
+  });
+
   app.whenReady().then(() => {
     nativeTheme.themeSource = "dark";
     app.setAppUserModelId("com.defensity.app");
@@ -230,12 +267,78 @@ if (!hasLock) {
 
     const composed = compose(app.getPath("userData"));
     registerIpc(composed.useCases);
-    createMainWindow(devServerUrl);
-    app.on("will-quit", composed.dispose);
+
+    function buildTrayMenu(): Menu {
+      const template: MenuItemConstructorOptions[] = [
+        { label: "Open defensity", click: focusExistingWindow },
+        { label: composed.activeRunsLabel(), enabled: false },
+        { type: "separator" },
+        {
+          label: "Quit defensity",
+          click: () => {
+            quitting = true;
+            app.quit();
+          },
+        },
+      ];
+      return Menu.buildFromTemplate(template);
+    }
+
+    function createTray(): void {
+      try {
+        tray = new Tray(path.join(__dirname, "../../../build/icon.png"));
+      } catch {
+        // Without a tray icon, closing must quit so the app is not lost.
+        tray = null;
+        return;
+      }
+      tray.setToolTip("defensity");
+      tray.setContextMenu(buildTrayMenu());
+      tray.on("click", focusExistingWindow);
+      tray.on("double-click", focusExistingWindow);
+
+      const timer = setInterval(() => {
+        if (!tray) {
+          return;
+        }
+        tray.setToolTip(`defensity · ${composed.activeRunsLabel()}`);
+        tray.setContextMenu(buildTrayMenu());
+      }, 10000);
+      timer.unref();
+    }
+
+    function openMainWindow(): BrowserWindow {
+      const window = createMainWindow(devServerUrl);
+      window.on("close", (event) => {
+        if (quitting) {
+          return;
+        }
+        let closeToTray = true;
+        try {
+          closeToTray = composed.useCases.getSettings.execute().closeToTray;
+        } catch {
+          closeToTray = true;
+        }
+        if (tray && closeToTray) {
+          event.preventDefault();
+          window.hide();
+        }
+      });
+      return window;
+    }
+
+    createTray();
+    openMainWindow();
+
+    app.on("will-quit", () => {
+      tray?.destroy();
+      tray = null;
+      composed.dispose();
+    });
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
-        createMainWindow(devServerUrl);
+        openMainWindow();
       } else {
         focusExistingWindow();
       }

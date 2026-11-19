@@ -15,6 +15,10 @@ files:
 
 asar: true
 
+extraResources:
+  - from: docker
+    to: docker
+
 win:
   target:
     - nsis

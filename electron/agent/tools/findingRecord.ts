@@ -1,5 +1,6 @@
 import { stringArg } from "./args";
 import type { Tool, ToolResult } from "./types";
+import { normalizeFindingTitle } from "../../../shared/findings";
 
 const SEVERITIES = new Set(["critical", "high", "medium", "low"]);
 const VALIDATORS = new Set(["probe_run", "load_run", "static", "manual"]);
@@ -39,7 +40,7 @@ export const findingRecordTool: Tool = {
     },
   },
 
-  async execute(args): Promise<ToolResult> {
+  async execute(args, context): Promise<ToolResult> {
     const title = stringArg(args, "title")?.trim();
     const severity = stringArg(args, "severity")?.trim();
     const kind = stringArg(args, "class")?.trim();
@@ -67,6 +68,15 @@ export const findingRecordTool: Tool = {
         content: "A finding needs evidence from a validator, not an assumption",
       };
     }
+
+    const key = normalizeFindingTitle(title);
+    if (context.knownFindingTitles.has(key)) {
+      return {
+        ok: false,
+        content: `An issue with this title is already registered in this workspace: "${title}". Record only a new vulnerability that is not in the existing issue list.`,
+      };
+    }
+    context.knownFindingTitles.add(key);
 
     return {
       ok: true,

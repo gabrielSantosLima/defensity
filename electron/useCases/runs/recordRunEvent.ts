@@ -2,6 +2,7 @@ import type {
   RunEvent,
   RunEventType,
 } from "../../../shared/types";
+import { normalizeFindingTitle } from "../../../shared/findings";
 import type { Clock, Ids } from "../../services/clock";
 import type { FindingService } from "../../services/findingService";
 import type { HypothesisService } from "../../services/hypothesisService";
@@ -63,20 +64,38 @@ export class RecordRunEventUseCase {
     }
 
     if (input.type === "finding") {
-      this.findings.insert({
-        id: this.ids.newId(),
-        runId: input.runId,
-        hypothesisId: input.payload.hypothesisId
-          ? String(input.payload.hypothesisId)
-          : null,
-        title: String(input.payload.title ?? ""),
-        severity: String(input.payload.severity ?? "low") as never,
-        class: String(input.payload.class ?? "other"),
-        evidence: String(input.payload.evidence ?? ""),
-        validator: String(input.payload.validator ?? ""),
-        status: "open",
-        createdAt: this.clock.now(),
-      });
+      const title = String(input.payload.title ?? "").trim();
+      const run = this.runs.get(input.runId);
+      const duplicate = run
+        ? this.findings
+            .listByWorkspace(run.workspaceId)
+            .some(
+              (existing) =>
+                normalizeFindingTitle(existing.title) ===
+                normalizeFindingTitle(title),
+            )
+        : false;
+
+      if (duplicate) {
+        // The tool layer already refuses duplicates. This guard keeps an old
+        // or misbehaving agent from registering the same issue twice.
+        input.payload = { ...input.payload, duplicate: true };
+      } else {
+        this.findings.insert({
+          id: this.ids.newId(),
+          runId: input.runId,
+          hypothesisId: input.payload.hypothesisId
+            ? String(input.payload.hypothesisId)
+            : null,
+          title,
+          severity: String(input.payload.severity ?? "low") as never,
+          class: String(input.payload.class ?? "other"),
+          evidence: String(input.payload.evidence ?? ""),
+          validator: String(input.payload.validator ?? ""),
+          status: "open",
+          createdAt: this.clock.now(),
+        });
+      }
     }
 
     const createdAt = this.clock.now();

@@ -11,16 +11,24 @@ export function runDocker(
   args: string[],
   timeoutMs: number,
   name: string,
+  dockerHost?: string,
 ): Promise<DockerResult> {
   return new Promise((resolve) => {
-    const child = spawn("docker", args, { windowsHide: true });
+    const host = dockerHost?.trim();
+    const child = spawn("docker", args, {
+      windowsHide: true,
+      env: host ? { ...process.env, DOCKER_HOST: host } : process.env,
+    });
     let stdout = "";
     let stderr = "";
     let timedOut = false;
 
     const timer = setTimeout(() => {
       timedOut = true;
-      spawnSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+      spawnSync("docker", ["rm", "-f", name], {
+        stdio: "ignore",
+        env: host ? { ...process.env, DOCKER_HOST: host } : process.env,
+      });
       child.kill();
     }, timeoutMs);
 

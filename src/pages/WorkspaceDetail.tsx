@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Artifact, Finding, Run, Workspace } from "../../shared/types";
+import type { Artifact, Finding, Run, SandboxStatus, Workspace } from "../../shared/types";
 import { Button } from "../components/Button";
 import { Panel } from "../components/ui";
 import { errorMessage, formatBytes, formatDate, shortHash } from "../lib/format";
@@ -24,6 +24,8 @@ interface WorkspaceDetailProps {
   id: string;
   onBack: () => void;
   onArchived: () => void;
+  onDeleted: () => void;
+  onOpenSettings: () => void;
   onEdit: () => void;
   onRun: (run: Run) => void;
   onOpenRun: (runId: string) => void;
@@ -33,6 +35,8 @@ export function WorkspaceDetail({
   id,
   onBack,
   onArchived,
+  onDeleted,
+  onOpenSettings,
   onEdit,
   onRun,
   onOpenRun,
@@ -40,6 +44,7 @@ export function WorkspaceDetail({
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
   const [issues, setIssues] = useState<Finding[]>([]);
+  const [sandbox, setSandbox] = useState<SandboxStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +76,20 @@ export function WorkspaceDetail({
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadSandbox = useCallback(async () => {
+    try {
+      setSandbox(await window.defensity.getSandboxStatus());
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (workspace?.type === "web") {
+      void loadSandbox();
+    }
+  }, [workspace?.type, loadSandbox]);
 
   async function clearHistory() {
     if (!workspace) {
@@ -104,7 +123,7 @@ export function WorkspaceDetail({
     }
     try {
       await window.defensity.deleteWorkspace(workspace.id);
-      onBack();
+      onDeleted();
     } catch (caught) {
       setError(errorMessage(caught));
     }
@@ -320,6 +339,29 @@ export function WorkspaceDetail({
             The agent reads the artifacts with scoped tools and reports every step.
             Model, provider and thinking come from the workspace.
           </p>
+          {workspace.type === "web" && sandbox && !sandbox.ready ? (
+            <div className="alert alert--info">
+              <div>
+                Validation needs Docker and the sandbox images.{" "}
+                {sandbox.dockerAvailable
+                  ? "The images are not built yet."
+                  : "Docker is not reachable."}{" "}
+                Open Settings → Validation sandbox to fix the setup.
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={onOpenSettings}
+                >
+                  Open sandbox settings
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => void loadSandbox()}>
+                  Check again
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Button
               variant="primary"
@@ -327,7 +369,8 @@ export function WorkspaceDetail({
               disabled={
                 !workspace.provider ||
                 !workspace.model ||
-                runs.some((run) => run.status === "running")
+                runs.some((run) => run.status === "running") ||
+                (workspace.type === "web" && sandbox !== null && !sandbox.ready)
               }
               onClick={() => void startAnalysis()}
             >

@@ -15,7 +15,8 @@
     "build": "npm run build:main && vite build",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build:main && node --test tests"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

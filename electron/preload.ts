@@ -29,6 +29,16 @@ const api: DefensityApi = {
     ipcRenderer.invoke("issues:list", workspaceId),
   generateReport: (runId) => ipcRenderer.invoke("reports:generate", runId),
   saveReport: (runId) => ipcRenderer.invoke("reports:save", runId),
+  getSandboxStatus: () => ipcRenderer.invoke("sandbox:status"),
+  buildSandboxImages: () => ipcRenderer.invoke("sandbox:build"),
+  onSandboxProgress: (listener) => {
+    const handler = (_event: unknown, chunk: unknown) =>
+      listener(String(chunk ?? ""));
+    ipcRenderer.on("sandbox:progress", handler);
+    return () => {
+      ipcRenderer.removeListener("sandbox:progress", handler);
+    };
+  },
   onRunUpdate: (listener) => {
     const handler = (_event: unknown, update: unknown) =>
       listener(update as never);

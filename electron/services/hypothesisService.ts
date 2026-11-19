@@ -4,6 +4,7 @@ import type { Hypothesis } from "../../shared/types";
 export interface HypothesisService {
   insert(hypothesis: Hypothesis): void;
   listByRun(runId: string): Hypothesis[];
+  listByWorkspace(workspaceId: string): Hypothesis[];
 }
 
 interface HypothesisRow {
@@ -67,6 +68,18 @@ export function createHypothesisService(
            ORDER BY impact * plausibility DESC, created_at ASC`,
         )
         .all(runId) as unknown as HypothesisRow[];
+      return rows.map(toHypothesis);
+    },
+
+    listByWorkspace(workspaceId) {
+      const rows = database
+        .prepare(
+          `SELECT h.* FROM hypotheses h
+           JOIN runs r ON r.id = h.run_id
+           WHERE r.workspace_id = ?
+           ORDER BY h.created_at DESC`,
+        )
+        .all(workspaceId) as unknown as HypothesisRow[];
       return rows.map(toHypothesis);
     },
   };
