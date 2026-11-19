@@ -33,6 +33,17 @@ export function shortHash(hash: string | null): string {
   return hash ? hash.slice(0, 10) : "—";
 }
 
+export function formatCompact(value: number): string {
+  const absolute = Math.abs(value);
+  if (absolute >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`;
+  }
+  if (absolute >= 1_000) {
+    return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return String(Math.round(value));
+}
+
 export function errorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;

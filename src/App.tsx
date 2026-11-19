@@ -9,6 +9,7 @@ import logo from "../assets/logo/logo-dark.svg";
 import version from "../package.json";
 import type { Run, Workspace } from "../shared/types";
 import { Button } from "./components/Button";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { errorMessage } from "./lib/format";
 import { SettingsPage } from "./pages/SettingsPage";
 import { WorkspaceDetail } from "./pages/WorkspaceDetail";
@@ -119,6 +120,13 @@ export function App() {
               ? "Edit workspace"
               : view.title;
 
+  const viewKey =
+    view.name === "run"
+      ? `run:${view.id}`
+      : view.name === "workspace" || view.name === "edit"
+        ? `${view.name}:${view.id}`
+        : view.name;
+
   return (
     <div className="app-shell">
       <div className="app-body">
@@ -214,11 +222,12 @@ export function App() {
           </header>
 
           <div className={view.name === "run" ? "content content--run" : "content"}>
-            {error ? (
-              <div className="alert" style={{ marginBottom: 14 }}>
-                {error}
-              </div>
-            ) : null}
+            <ErrorBoundary key={viewKey}>
+              {error ? (
+                <div className="alert" style={{ marginBottom: 14 }}>
+                  {error}
+                </div>
+              ) : null}
 
             {view.name === "workspaces" ? (
               <WorkspacesPage
@@ -308,6 +317,7 @@ export function App() {
             ) : null}
 
             {view.name === "settings" ? <SettingsPage /> : null}
+            </ErrorBoundary>
           </div>
         </main>
       </div>

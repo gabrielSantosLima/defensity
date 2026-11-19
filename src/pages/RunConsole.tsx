@@ -18,8 +18,11 @@ import { Button } from "../components/Button";
 import { AgentMark } from "../components/AgentMark";
 import { Markdown } from "../components/Markdown";
 import { Spinner } from "../components/Spinner";
+import { TokenUsage } from "../components/TokenUsage";
 import { Panel } from "../components/ui";
-import { errorMessage } from "../lib/format";
+import { errorMessage, formatCompact } from "../lib/format";
+
+const compactTokens = (value: number) => formatCompact(value);
 
 function elapsed(run: Run, now: number): string {
   if (!run.startedAt) {
@@ -486,42 +489,48 @@ export function RunConsole({
             <span className={`chip run-status run-status--${run.status}`}>
               {run.status}
             </span>
+            {run.rerunOf ? (
+              <span className="chip chip--muted">continued</span>
+            ) : null}
           </div>
           <div className="run-stats">
-            <span>{run.provider ?? "—"} · {run.model ?? "—"}</span>
-            <span>·</span>
-            <span>{elapsed(run, now)}</span>
-            <span>·</span>
-            <span title="Cumulative tokens billed across every model call">
-              {run.totalTokens.toLocaleString()} billed
-            </span>
-            {contextTokens > 0 ? (
-              <>
-                <span>·</span>
+            <div className="run-metric run-metric--model">
+              <span className="run-metric-label">Model</span>
+              <span
+                className="run-metric-value"
+                title={`${run.provider ?? "—"} · ${run.model ?? "—"}`}
+              >
+                {run.provider ?? "—"} · {run.model ?? "—"}
+              </span>
+            </div>
+            <div className="run-metric run-metric--elapsed">
+              <span className="run-metric-label">Elapsed</span>
+              <span className="run-metric-value">{elapsed(run, now)}</span>
+            </div>
+            <div className="run-metric run-metric--usage">
+              <div className="run-metric-copy">
+                <span className="run-metric-label">Usage</span>
                 <span
-                  title={
-                    contextCeiling > 0
-                      ? `Latest prompt estimate, automatic compaction ceiling ${contextCeiling.toLocaleString()}`
-                      : "Latest prompt estimate"
-                  }
+                  className="run-metric-value"
+                  title={`${run.totalTokens.toLocaleString()} tokens billed across every model call`}
                 >
-                  {contextTokens.toLocaleString()} context
-                  {contextCeiling > 0
-                    ? ` / ${contextCeiling.toLocaleString()}`
-                    : ""}
+                  {compactTokens(run.totalTokens)} billed
                 </span>
-              </>
-            ) : null}
-            <span>·</span>
-            <span>
-              {findings.length} issue{findings.length === 1 ? "" : "s"}
-            </span>
-            <span>·</span>
-            <span>
-              {hypotheses.length} hypothes
-              {hypotheses.length === 1 ? "is" : "es"}
-            </span>
-            {run.rerunOf ? <span>· continued</span> : null}
+              </div>
+              <TokenUsage
+                used={contextTokens}
+                limit={contextCeiling}
+                billed={run.totalTokens}
+              />
+            </div>
+            <div className="run-metric">
+              <span className="run-metric-label">Results</span>
+              <span className="run-metric-value">
+                {findings.length} issue{findings.length === 1 ? "" : "s"} ·{" "}
+                {hypotheses.length} hypothes
+                {hypotheses.length === 1 ? "is" : "es"}
+              </span>
+            </div>
           </div>
           <div className="run-actions">
             {!running ? (
