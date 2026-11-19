@@ -15,6 +15,13 @@ export interface ToolContext {
 export interface ToolResult {
   ok: boolean;
   content: string;
+  metadata?: {
+    truncated?: boolean;
+    nextOffset?: number;
+    totalLines?: number;
+    startLine?: number;
+    endLine?: number;
+  };
 }
 
 export interface Tool {

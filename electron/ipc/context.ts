@@ -12,6 +12,7 @@ import type { SetProviderKeyUseCase } from "../useCases/providers/setProviderKey
 import type { BuildSandboxImagesUseCase } from "../useCases/sandbox/buildSandboxImages";
 import type { GetSandboxStatusUseCase } from "../useCases/sandbox/getSandboxStatus";
 import type { CancelRunUseCase } from "../useCases/runs/cancelRun";
+import type { ContinueRunUseCase } from "../useCases/runs/continueRun";
 import type { GetRunUseCase } from "../useCases/runs/getRun";
 import type { GenerateReportUseCase } from "../useCases/runs/generateReport";
 import type { ListFindingsUseCase } from "../useCases/runs/listFindings";
@@ -37,6 +38,7 @@ export interface AppUseCases {
   listModels: ListModelsUseCase;
   startRun: StartRunUseCase;
   rerunRun: RerunRunUseCase;
+  continueRun: ContinueRunUseCase;
   clearRunHistory: ClearRunHistoryUseCase;
   cancelRun: CancelRunUseCase;
   getRun: GetRunUseCase;

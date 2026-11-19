@@ -17,6 +17,7 @@ const api: DefensityApi = {
   listModels: (provider) => ipcRenderer.invoke("providers:listModels", provider),
   startRun: (workspaceId) => ipcRenderer.invoke("runs:start", workspaceId),
   rerunRun: (runId) => ipcRenderer.invoke("runs:rerun", runId),
+  continueRun: (runId) => ipcRenderer.invoke("runs:continue", runId),
   zoomBy: (delta) => ipcRenderer.invoke("zoom:by", delta),
   openExternal: (url) => ipcRenderer.invoke("app:openExternal", url),
   cancelRun: (runId) => ipcRenderer.invoke("runs:cancel", runId),

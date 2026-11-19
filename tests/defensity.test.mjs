@@ -42,8 +42,20 @@ const {
 const { hypothesisListTool } = require(
   "../dist/main/electron/agent/tools/hypothesisList.js",
 );
+const { fsReadTool } = require(
+  "../dist/main/electron/agent/tools/fsRead.js",
+);
+const { fsGrepTool } = require(
+  "../dist/main/electron/agent/tools/fsGrep.js",
+);
 const { runAgent } = require(
   "../dist/main/electron/agent/orchestrator.js",
+);
+const { buildResumeMessages } = require(
+  "../dist/main/electron/agent/resume.js",
+);
+const { ContinueRunUseCase } = require(
+  "../dist/main/electron/useCases/runs/continueRun.js",
 );
 const { openDatabase } = require(
   "../dist/main/electron/services/db/database.js",
@@ -170,6 +182,26 @@ function summaryResponse(text = "## Objective\n- compressed summary") {
     toolCalls: [],
     usage: { promptTokens: 20, completionTokens: 5, totalTokens: 25 },
   };
+}
+
+function toolContext(root) {
+  return {
+    root,
+    targetUrl: null,
+    libraryArtifactPath: null,
+    allowInvalidCertificates: false,
+    dockerHost: "",
+    knownFindingTitles: new Set(),
+    hypotheses: [],
+    findings: [],
+  };
+}
+
+function largeText(prefix, lines = 100) {
+  return Array.from(
+    { length: lines },
+    (_, index) => `${prefix}${index + 1} ${"x".repeat(100)}`,
+  ).join("\n");
 }
 
 test("run context carries existing issues and previous hypotheses", () => {
@@ -601,9 +633,59 @@ test("hypothesis_list exposes hypotheses and findings to the agent", async () =>
   assert.match(result.content, /Validated findings \(1\)/);
 });
 
+test("fs_read paginates with line numbers and continuation", async () => {
+  const directory = tempDir();
+  writeFileSync(
+    path.join(directory, "sample.ts"),
+    Array.from({ length: 300 }, (_, index) => `const line${index + 1} = ${index + 1};`).join("\n"),
+  );
+
+  const first = await fsReadTool.execute(
+    { path: "sample.ts", limit: 10 },
+    toolContext(directory),
+  );
+  assert.equal(first.ok, true);
+  assert.match(first.content, /sample\.ts · lines 1-10 of 300/);
+  assert.match(first.content, / 1: const line1 = 1;/);
+  assert.match(first.content, /continue with offset=11/);
+  assert.equal(first.metadata.nextOffset, 11);
+
+  const second = await fsReadTool.execute(
+    { path: "sample.ts", offset: 11, limit: 5 },
+    toolContext(directory),
+  );
+  assert.match(second.content, /lines 11-15 of 300/);
+  assert.match(second.content, /11: const line11 = 11;/);
+  assert.match(second.content, /continue with offset=16/);
+});
+
+test("fs_grep filters by include and supports literal matching", async () => {
+  const directory = tempDir();
+  writeFileSync(path.join(directory, "a.ts"), "const token = 'SECRET';");
+  writeFileSync(path.join(directory, "b.js"), "const token = 'SECRET';");
+  writeFileSync(path.join(directory, "c.ts"), "const tokenizer = true;");
+
+  const result = await fsGrepTool.execute(
+    {
+      pattern: "token =",
+      path: ".",
+      include: "*.ts",
+      literal: true,
+      caseSensitive: true,
+    },
+    toolContext(directory),
+  );
+
+  assert.equal(result.ok, true);
+  assert.match(result.content, /a\.ts:1:/);
+  assert.ok(!result.content.includes("b.js"));
+  assert.ok(!result.content.includes("tokenizer"));
+});
+
 test("runAgent compacts automatically before the next step", async () => {
   const directory = tempDir();
-  writeFileSync(path.join(directory, "big.txt"), "x".repeat(20_000));
+  writeFileSync(path.join(directory, "big1.txt"), largeText("a"));
+  writeFileSync(path.join(directory, "big2.txt"), largeText("b"));
   const normalRequests = [];
   let normalCalls = 0;
   let summaryCalls = 0;
@@ -619,7 +701,8 @@ test("runAgent compacts automatically before the next step", async () => {
         return {
           text: "",
           toolCalls: [
-            { id: "c1", name: "fs_read", arguments: { path: "big.txt" } },
+            { id: "c1", name: "fs_read", arguments: { path: "big1.txt" } },
+            { id: "c2", name: "fs_read", arguments: { path: "big2.txt" } },
           ],
           usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 },
         };
@@ -656,7 +739,7 @@ test("runAgent compacts automatically before the next step", async () => {
 
 test("runAgent recovers from a provider context overflow", async () => {
   const directory = tempDir();
-  writeFileSync(path.join(directory, "medium.txt"), "y".repeat(5_000));
+  writeFileSync(path.join(directory, "medium.txt"), largeText("m", 40));
   const normalRequests = [];
   let normalCalls = 0;
   let summaryCalls = 0;
@@ -712,8 +795,8 @@ test("runAgent recovers from a provider context overflow", async () => {
 
 test("runAgent precomputes a summary without blocking the step", async () => {
   const directory = tempDir();
-  writeFileSync(path.join(directory, "first.txt"), "a".repeat(12_000));
-  writeFileSync(path.join(directory, "second.txt"), "b".repeat(12_000));
+  writeFileSync(path.join(directory, "first.txt"), largeText("a"));
+  writeFileSync(path.join(directory, "second.txt"), largeText("b"));
   const normalRequests = [];
   let normalCalls = 0;
   let summaryCalls = 0;
@@ -735,7 +818,7 @@ test("runAgent precomputes a summary without blocking the step", async () => {
           toolCalls: [
             { id: "c2", name: "fs_read", arguments: { path: "second.txt" } },
           ],
-          usage: { promptTokens: 3_200, completionTokens: 10, totalTokens: 3_210 },
+          usage: { promptTokens: 6_500, completionTokens: 10, totalTokens: 6_510 },
         };
       }
       if (normalCalls === 1) {
@@ -757,7 +840,7 @@ test("runAgent precomputes a summary without blocking the step", async () => {
   const { emit, events } = createEmitter();
 
   await runAgent(
-    agentPayload(directory),
+    agentPayload(directory, { model: "model-8k" }),
     emit,
     new AbortController().signal,
     provider,
@@ -858,6 +941,141 @@ test("runAgent nudges the agent out of the hypothesis phase", async () => {
     events.filter((item) => item.type === "finding").length,
     1,
   );
+});
+
+test("resume messages rebuild tool calls and append a continuation turn", () => {
+  const messages = buildResumeMessages([
+    event({ type: "step.started", payload: { step: 1 } }),
+    event({ type: "assistant.message", payload: { text: "I inspected auth." } }),
+    event({
+      type: "tool.call",
+      payload: { name: "fs_read", arguments: { path: "auth.ts" } },
+    }),
+    event({
+      type: "tool.result",
+      payload: { name: "fs_read", preview: "file content", chars: 12 },
+    }),
+    event({ type: "run.completed", payload: {} }),
+  ]);
+
+  const assistant = messages.find((message) => message.role === "assistant");
+  const tool = messages.find((message) => message.role === "tool");
+  assert.equal(assistant.content, "I inspected auth.");
+  assert.equal(assistant.toolCalls.length, 1);
+  assert.equal(tool.toolCallId, assistant.toolCalls[0].id);
+  assert.equal(tool.content, "file content");
+  assert.match(messages.at(-1).content, /Continue the same analysis/);
+});
+
+test("continueRun reopens the same run with its prior context", () => {
+  const database = openDatabase(path.join(tempDir(), "defensity.db"));
+  const workspaces = createWorkspaceService(database);
+  const runs = createRunService(database);
+  const hypotheses = createHypothesisService(database);
+  const findings = createFindingService(database);
+
+  workspaces.insert({
+    id: "workspace-continue",
+    name: "Continue app",
+    type: "web",
+    targetUrl: "http://127.0.0.1:4789",
+    targetApkPath: null,
+    libraryArtifactPath: null,
+    libraryArtifactKind: null,
+    sourcePath: path.join(root, "tests", "fixtures", "sample-app"),
+    docsPath: null,
+    provider: "openai",
+    model: "gpt-test",
+    thinking: "off",
+    authorizedAt: now(),
+    authorizationNote: "test fixture",
+    archivedAt: null,
+    createdAt: now(),
+    updatedAt: now(),
+    artifacts: [],
+  });
+
+  runs.create({
+    id: "continue-run",
+    workspaceId: "workspace-continue",
+    status: "completed",
+    provider: "openai",
+    model: "gpt-test",
+    thinking: "off",
+    startedAt: now(),
+    endedAt: now(),
+    error: null,
+    promptTokens: 100,
+    completionTokens: 50,
+    totalTokens: 150,
+    stepCount: 3,
+    rerunOf: null,
+    createdAt: now(),
+  });
+  runs.appendEvent({
+    id: randomUUID(),
+    runId: "continue-run",
+    type: "step.started",
+    payload: { step: 3 },
+    createdAt: now(),
+  });
+  runs.appendEvent({
+    id: randomUUID(),
+    runId: "continue-run",
+    type: "assistant.message",
+    payload: { text: "I inspected the target." },
+    createdAt: now(),
+  });
+  runs.appendEvent({
+    id: randomUUID(),
+    runId: "continue-run",
+    type: "run.completed",
+    payload: {},
+    createdAt: now(),
+  });
+
+  let captured = null;
+  const continueRun = new ContinueRunUseCase({
+    workspaces,
+    runs,
+    secrets: { read: () => "test-key" },
+    settings: { get: () => ({ ...DEFAULT_ENGINE_SETTINGS }) },
+    agent: {
+      start: (payload) => {
+        captured = payload;
+      },
+      cancel: () => {},
+      dispose: () => {},
+    },
+    sandbox: { preflight: () => {} },
+    hypotheses,
+    findings,
+    clock: { now },
+    ids: { newId: () => randomUUID() },
+  });
+
+  const continued = continueRun.execute("continue-run");
+  assert.equal(continued.id, "continue-run");
+  assert.equal(continued.status, "running");
+  assert.equal(runs.get("continue-run").status, "running");
+  assert.equal(captured.run.id, "continue-run");
+  assert.equal(captured.startStep, 4);
+  assert.ok(
+    captured.resumeMessages.some(
+      (message) =>
+        message.role === "assistant" &&
+        message.content === "I inspected the target.",
+    ),
+  );
+  assert.ok(
+    captured.resumeMessages.some(
+      (message) =>
+        message.role === "user" &&
+        message.content.includes("Continue the same analysis"),
+    ),
+  );
+
+  database.close();
 });
 
 test("sandbox status has a stable shape and preflight matches it", () => {

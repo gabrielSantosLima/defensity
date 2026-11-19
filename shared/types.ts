@@ -87,6 +87,7 @@ export type RunEventType =
   | "compaction"
   | "usage"
   | "run.completed"
+  | "run.continued"
   | "run.failed"
   | "run.cancelled";
 
@@ -245,6 +246,7 @@ export interface DefensityApi {
   listModels: (provider: ProviderId) => Promise<ModelInfo[]>;
   startRun: (workspaceId: string) => Promise<Run>;
   rerunRun: (runId: string) => Promise<Run>;
+  continueRun: (runId: string) => Promise<Run>;
   zoomBy: (delta: number) => Promise<void>;
   openExternal: (url: string) => Promise<void>;
   cancelRun: (runId: string) => Promise<void>;

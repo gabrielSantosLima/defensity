@@ -98,6 +98,8 @@ export interface AgentStartPayload {
   workspace: AgentWorkspace;
   limits: { maxToolResultChars: number };
   seed?: string;
+  resumeMessages?: AgentMessage[];
+  startStep?: number;
   knownHypotheses?: AgentHypothesis[];
   knownFindings?: AgentFinding[];
   dockerHost?: string;

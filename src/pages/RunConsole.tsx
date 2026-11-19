@@ -91,6 +91,7 @@ export function RunConsole({
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
   const [rerunning, setRerunning] = useState(false);
+  const [continuing, setContinuing] = useState(false);
   const [pinned, setPinned] = useState(true);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const timelineRef = useRef<HTMLDivElement | null>(null);
@@ -294,6 +295,20 @@ export function RunConsole({
     }
   }
 
+  async function continueRun() {
+    setContinuing(true);
+    setError(null);
+    try {
+      const next = await window.defensity.continueRun(runId);
+      setRun(next);
+      void refresh();
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setContinuing(false);
+    }
+  }
+
   async function openReport() {
     try {
       setReportPath(null);
@@ -342,6 +357,9 @@ export function RunConsole({
         >
           <span className="tl-result-meta">
             {ok ? "result" : "error"} · {String(event.payload.chars ?? 0)} chars
+            {event.payload.nextOffset
+              ? ` · next offset ${String(event.payload.nextOffset)}`
+              : ""}
           </span>
           <pre className="tl-pre">{String(event.payload.preview ?? "")}</pre>
         </div>
@@ -625,15 +643,15 @@ export function RunConsole({
               <Button
                 variant="secondary"
                 size="sm"
-                loading={rerunning}
-                onClick={() => void rerun()}
+                loading={continuing}
+                onClick={() => void continueRun()}
               >
                 <Play size={14} strokeWidth={1.5} aria-hidden="true" />
                 Continue
               </Button>
               <span className="hint">
-                Resume the analysis from this checkpoint with every hypothesis
-                and finding already recorded.
+                Continue this same run with the current conversation, hypotheses
+                and findings already in context.
               </span>
             </div>
           ) : null}

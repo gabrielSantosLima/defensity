@@ -4,6 +4,7 @@ import type {
   AgentFinding,
   AgentHypothesis,
   AgentInbound,
+  AgentMessage,
   AgentOutbound,
   AgentStartPayload as WireStartPayload,
 } from "../agent/types";
@@ -40,6 +41,8 @@ export interface AgentStartPayload {
   baseUrl: string;
   limits: { maxToolResultChars: number };
   seed?: string;
+  resumeMessages?: AgentMessage[];
+  startStep?: number;
   knownHypotheses?: AgentHypothesis[];
   knownFindings?: AgentFinding[];
   dockerHost: string;
@@ -65,6 +68,9 @@ export function createAgentService(handlers: AgentHandlers): AgentService {
 
   return {
     start(payload) {
+      // The same run can be continued after it finished, so the new agent
+      // process must be allowed to report its finish again.
+      finished.delete(payload.run.id);
       const wire: WireStartPayload = {
         runId: payload.run.id,
         provider: payload.run.provider ?? "compatible",
@@ -75,6 +81,8 @@ export function createAgentService(handlers: AgentHandlers): AgentService {
         workspace: payload.workspace as WireStartPayload["workspace"],
         limits: payload.limits,
         seed: payload.seed,
+        resumeMessages: payload.resumeMessages,
+        startStep: payload.startStep,
         knownHypotheses: payload.knownHypotheses,
         knownFindings: payload.knownFindings,
         dockerHost: payload.dockerHost,

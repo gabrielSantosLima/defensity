@@ -41,6 +41,9 @@ Rules:
 - Stay inside the allowed root. Never attempt to read or write outside it.
 - Do not run commands or install anything. You only read files.
 - Read the README first when it exists, then the documentation that matters.
+- Use fs_grep to locate relevant symbols or lines, then fs_read only the needed
+  line range with offset and limit. Continue with the returned next offset.
+  Never read a whole large file, and never read the same range twice.
 - When you are done, reply with a concise summary and no tool calls.
 - probe_run sends bounded HTTP requests from the sandbox and load_run runs a
   Gatling scenario. Use them only against the workspace target.
@@ -184,6 +187,7 @@ export async function runAgent(
   let messages: AgentMessage[] = [
     { id: nextId(), role: "system", content: SYSTEM_PROMPT },
     { id: nextId(), role: "user", kind: "task", content: buildTaskPrompt(payload, root) },
+    ...(payload.resumeMessages ?? []),
   ];
 
   const usage: Usage = { ...ZERO };
@@ -389,7 +393,7 @@ export async function runAgent(
   };
 
   try {
-    for (let step = 1; ; step += 1) {
+    for (let step = payload.startStep ?? 1; ; step += 1) {
       if (signal.aborted) {
         throw new Error("cancelled");
       }
@@ -503,6 +507,8 @@ export async function runAgent(
           ok: outcome.ok,
           preview: outcome.content.slice(0, 12000),
           chars: outcome.content.length,
+          truncated: outcome.metadata?.truncated ?? false,
+          nextOffset: outcome.metadata?.nextOffset ?? null,
         });
 
         if (call.name === "finding_record" && outcome.ok) {

@@ -19,6 +19,7 @@ export interface RunService {
     status: RunStatus,
     patch?: { endedAt?: string; error?: string },
   ): void;
+  reopen(id: string): void;
   addUsage(
     id: string,
     usage: { promptTokens: number; completionTokens: number; totalTokens: number },
@@ -158,6 +159,14 @@ export function createRunService(database: DatabaseSync): RunService {
              error = COALESCE(?, error) WHERE id = ?`,
         )
         .run(status, patch?.endedAt ?? null, patch?.error ?? null, id);
+    },
+
+    reopen(id) {
+      database
+        .prepare(
+          "UPDATE runs SET status = 'running', ended_at = NULL, error = NULL WHERE id = ?",
+        )
+        .run(id);
     },
 
     addUsage(id, usage) {

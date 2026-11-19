@@ -28,6 +28,7 @@ import { ClearProviderKeyUseCase } from "./useCases/providers/clearProviderKey";
 import { ListModelsUseCase } from "./useCases/providers/listModels";
 import { SetProviderKeyUseCase } from "./useCases/providers/setProviderKey";
 import { CancelRunUseCase } from "./useCases/runs/cancelRun";
+import { ContinueRunUseCase } from "./useCases/runs/continueRun";
 import { FinishRunUseCase } from "./useCases/runs/finishRun";
 import { GetRunUseCase } from "./useCases/runs/getRun";
 import { GenerateReportUseCase } from "./useCases/runs/generateReport";
@@ -187,6 +188,18 @@ function compose(userData: string): {
     }),
     startRun,
     rerunRun: new RerunRunUseCase({ runs, startRun }),
+    continueRun: new ContinueRunUseCase({
+      workspaces,
+      runs,
+      secrets,
+      settings: settingsService,
+      agent,
+      sandbox,
+      hypotheses,
+      findings,
+      clock: systemClock,
+      ids: systemIds,
+    }),
     cancelRun: new CancelRunUseCase({ runs, agent }),
     clearRunHistory: new ClearRunHistoryUseCase(runs),
     getRun: new GetRunUseCase(runs),
